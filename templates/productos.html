@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#1a3c6e">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Recarga Veloz">
+    <link rel="manifest" href="/static/manifest.json">
+    <link rel="apple-touch-icon" href="/static/icons/icon-192.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="/static/icons/icon-192.png">
+
+    <title>{{ categoria }} - Recarga Veloz</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header class="top-bar">
+            <a href="{{ url_for('index') }}" class="back-btn">← Volver</a>
+            <h1>{{ categoria }}</h1>
+            <a href="{{ url_for('carrito') }}" class="cart-btn">🛒 Carrito</a>
+        </header>
+
+        <div class="products-grid">
+            {% for p in productos %}
+            <div class="product-card">
+                <img src="{{ p.imagen }}" alt="{{ p.nombre }}">
+                <div class="product-info">
+                    <h3>{{ p.nombre }}</h3>
+                    <p class="price">${{ '%.2f'|format(p.precio) }}</p>
+                    <a href="{{ url_for('agregar', producto_id=p.id) }}" class="btn-add">+ Agregar</a>
+                </div>
+            </div>
+            {% else %}
+            <p class="empty">No hay productos en esta categoría.</p>
+            {% endfor %}
+        </div>
+    </div>
+
+    <script src="/static/js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#1a3c6e">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Recarga Veloz">
+    <link rel="manifest" href="/static/manifest.json">
+    <link rel="apple-touch-icon" href="/static/icons/icon-192.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="/static/icons/icon-192.png">
+
+    <title>Administración - Recarga Veloz</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .admin-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; flex-wrap: wrap; gap: 10px; }
+        .admin-actions a { margin-left: 10px; }
+        .table-container { overflow-x: auto; background: white; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.06); }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #eee; }
+        th { background: #1a3c6e; color: white; font-weight: 600; }
+        tr:hover { background: #f8f9fa; }
+        .stock-bajo { color: #dc3545; font-weight: 700; }
+        .stock-ok { color: #28a745; }
+        .badge { padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; }
+        .badge-activo { background: #d4edda; color: #155724; }
+        .badge-inactivo { background: #f8d7da; color: #721c24; }
+        .btn-small { padding: 6px 12px; border-radius: 6px; text-decoration: none; font-size: 13px; font-weight: 600; margin-right: 5px; }
+        .btn-edit { background: #1a3c6e; color: white; }
+        .btn-stock { background: #17a2b8; color: white; }
+        .stock-form { display: inline-flex; gap: 5px; align-items: center; }
+        .stock-form input { width: 60px; padding: 4px; border: 1px solid #ddd; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="admin-header">
+            <div>
+                <h1 style="color:#1a3c6e; margin:0;">Panel de Administración</h1>
+                <p style="color:#666; margin:5px 0 0;">Gestión de Productos e Inventario</p>
+            </div>
+            <div class="admin-actions">
+                <a href="{{ url_for('admin_nuevo_producto') }}" class="btn-add">+ Nuevo Producto</a>
+                <a href="{{ url_for('dashboard_contable') }}" class="btn-small btn-edit">Dashboard Contable</a>
+                <a href="{{ url_for('pedidos_bar') }}" class="btn-small btn-edit">Ver Pedidos</a>
+                <a href="{{ url_for('logout') }}" class="btn-small" style="background:#dc3545; color:white;">Salir</a>
+            </div>
+        </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="flash {{ category }}" style="margin-bottom:15px;">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Producto</th>
+                        <th>Categoría</th>
+                        <th>Precio</th>
+                        <th>Stock</th>
+                        <th>Mínimo</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p in productos %}
+                    <tr>
+                        <td><strong>{{ p.nombre }}</strong></td>
+                        <td>{{ p.categoria }}</td>
+                        <td>${{ '%.2f'|format(p.precio) }}</td>
+                        <td class="{% if p.stock <= p.stock_minimo %}stock-bajo{% else %}stock-ok{% endif %}">
+                            {{ p.stock }}
+                        </td>
+                        <td>{{ p.stock_minimo }}</td>
+                        <td>
+                            {% if p.activo %}
+                                <span class="badge badge-activo">Activo</span>
+                            {% else %}
+                                <span class="badge badge-inactivo">Inactivo</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{{ url_for('admin_editar_producto', id=p.id) }}" class="btn-small btn-edit">Editar</a>
+                            <form action="{{ url_for('admin_ajustar_stock', id=p.id) }}" method="POST" class="stock-form">
+                                <input type="number" name="cantidad" placeholder="+/-" required>
+                                <button type="submit" class="btn-small btn-stock">Stock</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script src="/static/js/app.js"></script>
+</body>
+</html>

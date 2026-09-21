@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#1a3c6e">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Recarga Veloz">
+    <link rel="manifest" href="/static/manifest.json">
+    <link rel="apple-touch-icon" href="/static/icons/icon-192.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="/static/icons/icon-192.png">
+
+    <title>Carrito - Recarga Veloz</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header class="top-bar">
+            <a href="{{ url_for('index') }}" class="back-btn">← Seguir comprando</a>
+            <h1>Tu Pedido</h1>
+            <div></div>
+        </header>
+
+        {% if items %}
+        <div class="cart-list">
+            {% for item in items %}
+            <div class="cart-item">
+                <img src="{{ item.imagen }}" alt="{{ item.nombre }}">
+                <div class="cart-details">
+                    <h3>{{ item.nombre }}</h3>
+                    <p>${{ '%.2f'|format(item.precio) }} c/u</p>
+                    <div class="qty-controls">
+                        <a href="{{ url_for('actualizar_cantidad', producto_id=item.id, accion='restar') }}" class="qty-btn">−</a>
+                        <span>{{ item.cantidad }}</span>
+                        <a href="{{ url_for('actualizar_cantidad', producto_id=item.id, accion='sumar') }}" class="qty-btn">+</a>
+                    </div>
+                </div>
+                <div class="cart-right">
+                    <p class="subtotal">${{ '%.2f'|format(item.subtotal) }}</p>
+                    <a href="{{ url_for('eliminar', producto_id=item.id) }}" class="btn-delete">🗑</a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="cart-summary">
+            <h2>Total: ${{ '%.2f'|format(total) }}</h2>
+            <form action="{{ url_for('confirmar') }}" method="POST">
+                <button type="submit" class="btn-confirm">Confirmar Pedido</button>
+            </form>
+        </div>
+        {% else %}
+        <div class="empty-cart">
+            <p>Tu carrito está vacío</p>
+            <a href="{{ url_for('index') }}" class="btn-add">Ir al menú</a>
+        </div>
+        {% endif %}
+    </div>
+
+    <script src="/static/js/app.js"></script>
+</body>
+</html>

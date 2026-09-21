@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#1a3c6e">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Recarga Veloz">
+    <link rel="manifest" href="/static/manifest.json">
+    <link rel="apple-touch-icon" href="/static/icons/icon-192.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="/static/icons/icon-192.png">
+
+    <title>Registrar Gasto - Recarga Veloz</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .form-box { background: white; max-width: 450px; margin: 40px auto; padding: 30px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); }
+        .form-box h1 { color: #1a3c6e; margin-bottom: 25px; text-align: center; }
+        .form-group { margin-bottom: 18px; }
+        .form-group label { display: block; margin-bottom: 6px; font-weight: 600; }
+        .form-group input, .form-group select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; }
+        .form-actions { display: flex; gap: 10px; margin-top: 25px; }
+        .form-actions button, .form-actions a { flex: 1; text-align: center; padding: 12px; border-radius: 8px; font-weight: 600; text-decoration: none; }
+        .btn-save { background: #28a745; color: white; border: none; cursor: pointer; }
+        .btn-cancel { background: #6c757d; color: white; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="form-box">
+            <h1>Registrar Gasto</h1>
+            <form method="POST">
+                <div class="form-group">
+                    <label>Descripción</label>
+                    <input type="text" name="descripcion" required placeholder="Ej: Compra de frutas">
+                </div>
+                <div class="form-group">
+                    <label>Monto ($)</label>
+                    <input type="number" step="0.01" name="monto" required>
+                </div>
+                <div class="form-group">
+                    <label>Categoría</label>
+                    <select name="categoria" required>
+                        <option value="Insumos">Insumos / Ingredientes</option>
+                        <option value="Empaques">Empaques</option>
+                        <option value="Servicios">Servicios</option>
+                        <option value="Otros">Otros</option>
+                    </select>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn-save">Guardar Gasto</button>
+                    <a href="{{ url_for('dashboard_contable') }}" class="btn-cancel">Cancelar</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="/static/js/app.js"></script>
+</body>
+</html>

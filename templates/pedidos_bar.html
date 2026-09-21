@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#1a3c6e">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Recarga Veloz">
+    <link rel="manifest" href="/static/manifest.json">
+    <link rel="apple-touch-icon" href="/static/icons/icon-192.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="/static/icons/icon-192.png">
+
+    <title>Pedidos - Recarga Veloz</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header class="top-bar">
+            <h1>Pedidos del Bar</h1>
+            <a href="{{ url_for('logout') }}" class="back-btn">Cerrar sesión</a>
+        </header>
+
+        <div class="orders-list">
+            {% for pedido in pedidos %}
+            <div class="order-card status-{{ pedido.estado|lower|replace(' ', '-') }}">
+                <div class="order-header">
+                    <strong>{{ pedido.numero_orden }}</strong>
+                    <span>{{ pedido.fecha }}</span>
+                </div>
+                <p class="order-products">{{ pedido.productos or 'Sin productos' }}</p>
+                <p class="order-total">Total: ${{ '%.2f'|format(pedido.total) }}</p>
+                <p class="order-status">Estado: <strong>{{ pedido.estado }}</strong></p>
+
+                <div class="order-actions">
+                    {% if pedido.estado == 'Pendiente' %}
+                        <a href="{{ url_for('cambiar_estado', pedido_id=pedido.id, estado='En preparación') }}" class="btn-status">En preparación</a>
+                    {% elif pedido.estado == 'En preparación' %}
+                        <a href="{{ url_for('cambiar_estado', pedido_id=pedido.id, estado='Listo') }}" class="btn-status">Marcar Listo</a>
+                    {% elif pedido.estado == 'Listo' %}
+                        <a href="{{ url_for('cambiar_estado', pedido_id=pedido.id, estado='Entregado') }}" class="btn-status">Entregar</a>
+                    {% else %}
+                        <span class="delivered">Entregado</span>
+                    {% endif %}
+                </div>
+            </div>
+            {% else %}
+            <p class="empty">No hay pedidos todavía.</p>
+            {% endfor %}
+        </div>
+    </div>
+
+    <script src="/static/js/app.js"></script>
+</body>
+</html>
