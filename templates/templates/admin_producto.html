@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#1a3c6e">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Recarga Veloz">
+    <link rel="manifest" href="/static/manifest.json">
+    <link rel="apple-touch-icon" href="/static/icons/icon-192.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="/static/icons/icon-192.png">
+
+    <title>{% if producto %}Editar{% else %}Nuevo{% endif %} Producto - Recarga Veloz</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .form-box { background: white; max-width: 520px; margin: 30px auto; padding: 30px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); }
+        .form-box h1 { color: #1a3c6e; margin-bottom: 25px; text-align: center; }
+        .form-group { margin-bottom: 18px; }
+        .form-group label { display: block; margin-bottom: 6px; font-weight: 600; color: #444; }
+        .form-group input, .form-group select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 15px; }
+        .form-actions { display: flex; gap: 10px; margin-top: 25px; }
+        .form-actions button, .form-actions a { flex: 1; text-align: center; padding: 12px; border-radius: 8px; font-weight: 600; text-decoration: none; }
+        .btn-save { background: #28a745; color: white; border: none; cursor: pointer; }
+        .btn-cancel { background: #6c757d; color: white; }
+        .preview { max-width: 150px; max-height: 150px; border-radius: 8px; margin-top: 8px; }
+        .hint { font-size: 13px; color: #777; margin-top: 4px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="form-box">
+            <h1>{% if producto %}Editar Producto{% else %}Nuevo Producto{% endif %}</h1>
+            
+            <form method="POST" enctype="multipart/form-data">
+                <div class="form-group">
+                    <label>Nombre del producto</label>
+                    <input type="text" name="nombre" value="{{ producto.nombre if producto else '' }}" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Precio ($)</label>
+                    <input type="number" step="0.01" name="precio" value="{{ producto.precio if producto else '' }}" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Categoría</label>
+                    <select name="categoria_id" required>
+                        {% for cat in categorias %}
+                        <option value="{{ cat.id }}" {% if producto and producto.categoria_id == cat.id %}selected{% endif %}>
+                            {{ cat.nombre }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>Stock actual</label>
+                    <input type="number" name="stock" value="{{ producto.stock if producto else 0 }}" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Stock mínimo (alerta)</label>
+                    <input type="number" name="stock_minimo" value="{{ producto.stock_minimo if producto else 5 }}" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Subir imagen desde tu computador</label>
+                    <input type="file" name="imagen_archivo" accept="image/*">
+                    <p class="hint">Formatos: JPG, PNG, GIF, WEBP</p>
+                </div>
+
+                <div class="form-group">
+                    <label>O pegar URL de imagen (opcional)</label>
+                    <input type="text" name="imagen" value="{{ producto.imagen if producto else '' }}" placeholder="https://...">
+                    <p class="hint">Si subes un archivo, se usará el archivo y se ignorará la URL</p>
+                </div>
+
+                {% if producto and producto.imagen %}
+                <div class="form-group">
+                    <label>Imagen actual:</label><br>
+                    <img src="{{ producto.imagen }}" class="preview" alt="Imagen actual">
+                </div>
+                {% endif %}
+                
+                {% if producto %}
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" name="activo" {% if producto.activo %}checked{% endif %}>
+                        Producto activo (visible para estudiantes)
+                    </label>
+                </div>
+                {% endif %}
+                
+                <div class="form-actions">
+                    <button type="submit" class="btn-save">Guardar</button>
+                    <a href="{{ url_for('admin_panel') }}" class="btn-cancel">Cancelar</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="/static/js/app.js"></script>
+</body>
+</html>

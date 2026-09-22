@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#1a3c6e">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Recarga Veloz">
+    <link rel="manifest" href="/static/manifest.json">
+    <link rel="apple-touch-icon" href="/static/icons/icon-192.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="/static/icons/icon-192.png">
+
+    <title>Recarga Veloz</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h2 class="school-name">Unidad Educativa Dr. José María Velasco Ibarra</h2>
+            <h1 class="title">RECARGA VELOZ</h1>
+            <p class="slogan">Tu punto saludable</p>
+        </header>
+
+        <div class="instruction">
+            Selecciona la categoría de alimentos que deseas comprar
+        </div>
+
+        <div class="categories">
+            <a href="{{ url_for('categoria', nombre='Sólidos') }}" class="category-card">
+                <img src="https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=500&h=350&fit=crop" alt="Sólidos">
+                <div class="category-title solidos">SÓLIDOS</div>
+            </a>
+
+            <a href="{{ url_for('categoria', nombre='Bebidas') }}" class="category-card">
+                <img src="https://images.unsplash.com/photo-1622597467836-f3285f2131b8?w=500&h=350&fit=crop" alt="Bebidas">
+                <div class="category-title bebidas">BEBIDAS</div>
+            </a>
+
+            <a href="{{ url_for('categoria', nombre='Postres') }}" class="category-card">
+                <img src="https://images.unsplash.com/photo-1488477181946-6428a0291777?w=500&h=350&fit=crop" alt="Postres">
+                <div class="category-title postres">POSTRES</div>
+            </a>
+        </div>
+
+        <div class="footer-links">
+            <a href="{{ url_for('carrito') }}">🛒 Ver Carrito</a>
+            <a href="{{ url_for('login') }}">🔐 Personal</a>
+        </div>
+    </div>
+
+    <script src="/static/js/app.js"></script>
+</body>
+</html>

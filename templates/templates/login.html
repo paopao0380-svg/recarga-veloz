@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#1a3c6e">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Recarga Veloz">
+    <link rel="manifest" href="/static/manifest.json">
+    <link rel="apple-touch-icon" href="/static/icons/icon-192.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="/static/icons/icon-192.png">
+
+    <title>Login - Recarga Veloz</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container center">
+        <div class="login-box">
+            <h1>Recarga Veloz</h1>
+            <p>Acceso del Personal</p>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="flash {{ category }}">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <form method="POST">
+                <label>Usuario</label>
+                <input type="text" name="usuario" required placeholder="usuario">
+
+                <label>Contraseña</label>
+                <input type="password" name="password" required placeholder="contraseña">
+
+                <button type="submit" class="btn-confirm">Ingresar</button>
+            </form>
+
+            <p class="hint">
+                <strong>Usuarios de prueba:</strong><br><br>
+                <strong>admin</strong> / admin123 → Administración e Inventario<br>
+                <strong>cajero</strong> / cajero123 → Pedidos del Bar<br>
+                <strong>contador</strong> / contador123 → Dashboard Contable
+            </p>
+
+            <a href="{{ url_for('index') }}">← Volver al menú</a>
+        </div>
+    </div>
+
+    <script src="/static/js/app.js"></script>
+</body>
+</html>

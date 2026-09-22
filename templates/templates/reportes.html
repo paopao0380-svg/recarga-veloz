@@ -1,1 +1,223 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#1a3c6e">
+    <title>Reportes - Recarga Veloz</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <style>
+        .filters {
+            background: white; padding: 20px; border-radius: 14px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.06); margin-bottom: 20px;
+        }
+        .filters form { display: flex; flex-wrap: wrap; gap: 12px; align-items: end; }
+        .filters label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px; color: #555; }
+        .filters input, .filters select {
+            padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px;
+        }
+        .filters button, .filters a.btn {
+            padding: 10px 18px; border: none; border-radius: 8px; font-weight: 600;
+            cursor: pointer; text-decoration: none; display: inline-block; font-size: 14px;
+        }
+        .btn-gen { background: #1a3c6e; color: white; }
+        .btn-excel { background: #217346; color: white; }
+        .btn-print { background: #6c757d; color: white; }
+        .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 20px; }
+        .card { background: white; padding: 16px; border-radius: 12px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+        .card h3 { font-size: 12px; color: #666; margin-bottom: 6px; }
+        .card .value { font-size: 22px; font-weight: 800; }
+        .card.ing .value { color: #28a745; }
+        .card.egr .value { color: #dc3545; }
+        .card.uti .value { color: #1a3c6e; }
+        .section { background: white; border-radius: 14px; padding: 18px; margin-bottom: 18px; box-shadow: 0 2px 10px rgba(0,0,0,0.06); }
+        .section h2 { color: #1a3c6e; font-size: 17px; margin-bottom: 14px; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        th, td { padding: 8px; text-align: left; border-bottom: 1px solid #eee; }
+        th { color: #666; }
+        .chart-box { max-width: 100%; height: 280px; position: relative; }
+        .quick-btns { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+        .quick-btns button {
+            background: #e8f0fe; color: #1a3c6e; border: none; padding: 8px 14px;
+            border-radius: 20px; font-weight: 600; cursor: pointer; font-size: 13px;
+        }
+        @media print {
+            .no-print { display: none !important; }
+            .section { box-shadow: none; border: 1px solid #ddd; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="dashboard-header no-print" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:10px;">
+            <div>
+                <h1 style="color:#1a3c6e;margin:0;">Reportes Ingresos / Egresos</h1>
+                <p style="color:#666;margin:4px 0 0;">Proyección de ventas y gastos</p>
+            </div>
+            <div>
+                <a href="{{ url_for('dashboard_contable') }}" style="color:#1a3c6e;font-weight:600;text-decoration:none;">← Dashboard</a>
+            </div>
+        </div>
 
+        <div class="filters no-print">
+            <div class="quick-btns">
+                <form method="POST" style="display:inline;">
+                    <input type="hidden" name="periodo" value="semana">
+                    <button type="submit">Esta semana</button>
+                </form>
+                <form method="POST" style="display:inline;">
+                    <input type="hidden" name="periodo" value="mes">
+                    <button type="submit">Este mes</button>
+                </form>
+            </div>
+            <form method="POST">
+                <div>
+                    <label>Desde</label>
+                    <input type="date" name="fecha_desde" value="{{ fecha_desde }}" required>
+                </div>
+                <div>
+                    <label>Hasta</label>
+                    <input type="date" name="fecha_hasta" value="{{ fecha_hasta }}" required>
+                </div>
+                <button type="submit" class="btn-gen">Generar reporte</button>
+                <a class="btn btn-excel" href="{{ url_for('reportes_excel', desde=fecha_desde, hasta=fecha_hasta) }}">⬇ Excel / CSV</a>
+                <button type="button" class="btn-print" onclick="window.print()">🖨 Imprimir</button>
+            </form>
+        </div>
+
+        <div class="cards">
+            <div class="card ing">
+                <h3>Ingresos (Ventas)</h3>
+                <div class="value">${{ '%.2f'|format(ingresos.total) }}</div>
+                <small>{{ ingresos.cantidad }} pedidos</small>
+            </div>
+            <div class="card egr">
+                <h3>Egresos (Gastos)</h3>
+                <div class="value">${{ '%.2f'|format(egresos.total) }}</div>
+                <small>{{ egresos.cantidad }} registros</small>
+            </div>
+            <div class="card uti">
+                <h3>Utilidad / Proyección</h3>
+                <div class="value">${{ '%.2f'|format(utilidad) }}</div>
+                <small>{{ fecha_desde }} → {{ fecha_hasta }}</small>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Productos más vendidos</h2>
+            <div class="chart-box">
+                <canvas id="chartProductos"></canvas>
+            </div>
+            <table style="margin-top:16px;">
+                <thead>
+                    <tr><th>Producto</th><th>Categoría</th><th>Unidades</th><th>Monto</th></tr>
+                </thead>
+                <tbody>
+                    {% for t in top_productos %}
+                    <tr>
+                        <td>{{ t.nombre }}</td>
+                        <td>{{ t.categoria or '-' }}</td>
+                        <td>{{ t.total_vendido }}</td>
+                        <td>${{ '%.2f'|format(t.monto) }}</td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="4">Sin ventas en este periodo</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="section">
+            <h2>Ventas por categoría</h2>
+            <div class="chart-box">
+                <canvas id="chartCategorias"></canvas>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Detalle de pedidos (ingresos)</h2>
+            <table>
+                <thead>
+                    <tr><th>Orden</th><th>Fecha</th><th>Productos</th><th>Categoría</th><th>Total</th><th>Estado</th></tr>
+                </thead>
+                <tbody>
+                    {% for p in pedidos %}
+                    <tr>
+                        <td>{{ p.numero_orden }}</td>
+                        <td>{{ p.fecha }}</td>
+                        <td>{{ p.productos or '-' }}</td>
+                        <td>{{ p.categorias or '-' }}</td>
+                        <td>${{ '%.2f'|format(p.total) }}</td>
+                        <td>{{ p.estado }}</td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="6">Sin pedidos</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="section">
+            <h2>Detalle de gastos (egresos)</h2>
+            <table>
+                <thead>
+                    <tr><th>Descripción</th><th>Categoría</th><th>Monto</th><th>Fecha</th></tr>
+                </thead>
+                <tbody>
+                    {% for g in gastos_lista %}
+                    <tr>
+                        <td>{{ g.descripcion }}</td>
+                        <td>{{ g.categoria }}</td>
+                        <td>${{ '%.2f'|format(g.monto) }}</td>
+                        <td>{{ g.fecha }}</td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="4">Sin gastos</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const topLabels = [{% for t in top_productos %}"{{ t.nombre }}"{% if not loop.last %},{% endif %}{% endfor %}];
+        const topData = [{% for t in top_productos %}{{ t.total_vendido }}{% if not loop.last %},{% endif %}{% endfor %}];
+        const catLabels = [{% for c in por_categoria %}"{{ c.categoria or 'Sin cat.' }}"{% if not loop.last %},{% endif %}{% endfor %}];
+        const catData = [{% for c in por_categoria %}{{ c.monto }}{% if not loop.last %},{% endif %}{% endfor %}];
+
+        if (topLabels.length) {
+            new Chart(document.getElementById('chartProductos'), {
+                type: 'bar',
+                data: {
+                    labels: topLabels,
+                    datasets: [{
+                        label: 'Unidades vendidas',
+                        data: topData,
+                        backgroundColor: '#1a3c6e'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+                }
+            });
+        }
+        if (catLabels.length) {
+            new Chart(document.getElementById('chartCategorias'), {
+                type: 'doughnut',
+                data: {
+                    labels: catLabels,
+                    datasets: [{
+                        data: catData,
+                        backgroundColor: ['#1a3c6e', '#c41e3a', '#28a745', '#fd7e14', '#6f42c1']
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+        }
+    </script>
+</body>
+</html>

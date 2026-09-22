@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recibo {{ pedido.numero_orden }} - Recarga Veloz</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: Arial, sans-serif; }
+        body { background: #f5f5f5; padding: 20px; }
+        .recibo {
+            max-width: 400px; margin: 0 auto; background: white;
+            padding: 24px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .header { text-align: center; border-bottom: 2px dashed #333; padding-bottom: 12px; margin-bottom: 12px; }
+        .header h1 { font-size: 20px; color: #1a3c6e; }
+        .header p { font-size: 12px; color: #666; margin-top: 4px; }
+        .orden { text-align: center; font-size: 28px; font-weight: bold; color: #1a3c6e; margin: 12px 0; }
+        .meta { font-size: 13px; color: #555; margin-bottom: 12px; }
+        table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 14px; }
+        th { text-align: left; border-bottom: 1px solid #ddd; padding: 6px 4px; color: #666; }
+        td { padding: 6px 4px; border-bottom: 1px solid #f0f0f0; }
+        .total { text-align: right; font-size: 18px; font-weight: bold; margin-top: 12px; color: #1a3c6e; }
+        .footer { text-align: center; margin-top: 20px; font-size: 12px; color: #888; border-top: 2px dashed #333; padding-top: 12px; }
+        .acciones { text-align: center; margin: 20px auto; max-width: 400px; }
+        .acciones button, .acciones a {
+            display: inline-block; margin: 5px; padding: 12px 24px; border: none;
+            border-radius: 8px; font-weight: 600; cursor: pointer; text-decoration: none; font-size: 15px;
+        }
+        .btn-print { background: #1a3c6e; color: white; }
+        .btn-back { background: #6c757d; color: white; }
+        @media print {
+            body { background: white; padding: 0; }
+            .acciones { display: none !important; }
+            .recibo { box-shadow: none; max-width: 100%; }
+        }
+    </style>
+</head>
+<body>
+    <div class="acciones">
+        <button class="btn-print" onclick="window.print()">🖨 Imprimir comprobante</button>
+        <a href="{{ url_for('pedidos_bar') }}" class="btn-back">← Volver a pedidos</a>
+    </div>
+
+    <div class="recibo">
+        <div class="header">
+            <h1>RECARGA VELOZ</h1>
+            <p>Unidad Educativa Dr. José María Velasco Ibarra</p>
+            <p>Comprobante de pago / Ticket de retiro</p>
+        </div>
+
+        <div class="orden">{{ pedido.numero_orden }}</div>
+
+        <div class="meta">
+            <div><strong>Fecha:</strong> {{ pedido.fecha }}</div>
+            <div><strong>Estado:</strong> {{ pedido.estado }}</div>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Producto</th>
+                    <th>Cat.</th>
+                    <th>Cant.</th>
+                    <th>Precio</th>
+                    <th>Subt.</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for d in detalles %}
+                <tr>
+                    <td>{{ d.nombre }}</td>
+                    <td>{{ d.categoria or '-' }}</td>
+                    <td>{{ d.cantidad }}</td>
+                    <td>${{ '%.2f'|format(d.precio_unitario) }}</td>
+                    <td>${{ '%.2f'|format(d.cantidad * d.precio_unitario) }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <div class="total">TOTAL: ${{ '%.2f'|format(pedido.total) }}</div>
+
+        <div class="footer">
+            <p><strong>Presenta este ticket en la zona de retiros</strong></p>
+            <p>¡Gracias por preferir comida saludable!</p>
+            <p>Recarga Veloz — Tu punto saludable</p>
+        </div>
+    </div>
+</body>
+</html>
