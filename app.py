@@ -7,6 +7,11 @@ import os
 import uuid
 import csv
 import io
+from openpyxl import Workbook
+from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
+from openpyxl.chart import BarChart, Reference, PieChart
+from openpyxl.chart.label import DataLabelList
+from openpyxl.utils import get_column_letter
 
 app = Flask(__name__)
 app.secret_key = "recarga_veloz_secreto_2026"
@@ -622,22 +627,15 @@ def reportes_contable():
 @app.route("/contable/reportes/excel")
 @login_required
 def reportes_excel():
-    """Descargar reporte en Excel (CSV compatible con Excel)"""
+    """Descargar reporte Excel (.xlsx) con tablas y gráficos"""
     if current_user.rol not in ["contador", "admin"]:
         return redirect(url_for("index"))
-    
+
     fecha_desde = request.args.get("desde", (datetime.now().date() - timedelta(days=7)).strftime("%Y-%m-%d"))
     fecha_hasta = request.args.get("hasta", datetime.now().date().strftime("%Y-%m-%d"))
-    
+
     conn = get_db()
-    
-    output = io.StringIO()
-    writer = csv.writer(output, delimiter=';')
-    
-    writer.writerow(["RECARGA VELOZ - REPORTE CONTABLE"])
-    writer.writerow(["Periodo", fecha_desde, "a", fecha_hasta])
-    writer.writerow([])
-    
+
     ingresos = conn.execute(
         "SELECT COALESCE(SUM(total),0), COUNT(*) FROM pedidos WHERE date(fecha) BETWEEN ? AND ?",
         (fecha_desde, fecha_hasta)
@@ -646,18 +644,9 @@ def reportes_excel():
         "SELECT COALESCE(SUM(monto),0), COUNT(*) FROM gastos WHERE date(fecha) BETWEEN ? AND ?",
         (fecha_desde, fecha_hasta)
     ).fetchone()
-    
-    writer.writerow(["RESUMEN"])
-    writer.writerow(["Ingresos (ventas)", f"{ingresos[0]:.2f}"])
-    writer.writerow(["Cantidad de pedidos", ingresos[1]])
-    writer.writerow(["Egresos (gastos)", f"{egresos[0]:.2f}"])
-    writer.writerow(["Cantidad de gastos", egresos[1]])
-    writer.writerow(["Utilidad", f"{ingresos[0]-egresos[0]:.2f}"])
-    writer.writerow([])
-    
-    writer.writerow(["PEDIDOS / INGRESOS"])
-    writer.writerow(["Orden", "Fecha", "Total", "Estado", "Productos", "Categorias"])
-    for p in conn.execute("""
+    utilidad = ingresos[0] - egresos[0]
+
+    pedidos = conn.execute("""
         SELECT p.numero_orden, p.fecha, p.total, p.estado,
                GROUP_CONCAT(pr.nombre || ' x' || d.cantidad, ', '),
                GROUP_CONCAT(c.nombre, ', ')
@@ -667,22 +656,14 @@ def reportes_excel():
         LEFT JOIN categorias c ON pr.categoria_id = c.id
         WHERE date(p.fecha) BETWEEN ? AND ?
         GROUP BY p.id ORDER BY p.fecha
-    """, (fecha_desde, fecha_hasta)):
-        writer.writerow(list(p))
-    
-    writer.writerow([])
-    writer.writerow(["GASTOS / EGRESOS"])
-    writer.writerow(["Descripcion", "Categoria", "Monto", "Fecha"])
-    for g in conn.execute(
+    """, (fecha_desde, fecha_hasta)).fetchall()
+
+    gastos_lista = conn.execute(
         "SELECT descripcion, categoria, monto, fecha FROM gastos WHERE date(fecha) BETWEEN ? AND ? ORDER BY fecha",
         (fecha_desde, fecha_hasta)
-    ):
-        writer.writerow(list(g))
-    
-    writer.writerow([])
-    writer.writerow(["PRODUCTOS MAS VENDIDOS"])
-    writer.writerow(["Producto", "Categoria", "Unidades", "Monto"])
-    for t in conn.execute("""
+    ).fetchall()
+
+    top_productos = conn.execute("""
         SELECT pr.nombre, c.nombre, SUM(d.cantidad), SUM(d.cantidad * d.precio_unitario)
         FROM detalle_pedidos d
         JOIN productos pr ON d.producto_id = pr.id
@@ -690,17 +671,212 @@ def reportes_excel():
         JOIN pedidos p ON d.pedido_id = p.id
         WHERE date(p.fecha) BETWEEN ? AND ?
         GROUP BY pr.id ORDER BY SUM(d.cantidad) DESC
-    """, (fecha_desde, fecha_hasta)):
-        writer.writerow(list(t))
-    
+        LIMIT 10
+    """, (fecha_desde, fecha_hasta)).fetchall()
+
+    por_categoria = conn.execute("""
+        SELECT c.nombre, SUM(d.cantidad * d.precio_unitario)
+        FROM detalle_pedidos d
+        JOIN productos pr ON d.producto_id = pr.id
+        LEFT JOIN categorias c ON pr.categoria_id = c.id
+        JOIN pedidos p ON d.pedido_id = p.id
+        WHERE date(p.fecha) BETWEEN ? AND ?
+        GROUP BY c.id ORDER BY 2 DESC
+    """, (fecha_desde, fecha_hasta)).fetchall()
+
     conn.close()
-    
-    output.seek(0)
-    # BOM para que Excel abra bien los acentos
-    data = "﻿" + output.getvalue()
-    resp = make_response(data.encode("utf-8"))
-    resp.headers["Content-Type"] = "text/csv; charset=utf-8"
-    resp.headers["Content-Disposition"] = f"attachment; filename=reporte_recarga_veloz_{fecha_desde}_{fecha_hasta}.csv"
+
+    wb = Workbook()
+
+    # Estilos
+    header_fill = PatternFill("solid", fgColor="1A3C6E")
+    header_font = Font(bold=True, color="FFFFFF", size=11)
+    title_font = Font(bold=True, size=16, color="1A3C6E")
+    subtitle_font = Font(bold=True, size=12, color="333333")
+    money_font = Font(bold=True, size=12)
+    thin = Border(
+        left=Side(style='thin', color='CCCCCC'),
+        right=Side(style='thin', color='CCCCCC'),
+        top=Side(style='thin', color='CCCCCC'),
+        bottom=Side(style='thin', color='CCCCCC')
+    )
+    green_fill = PatternFill("solid", fgColor="E8F5E9")
+    red_fill = PatternFill("solid", fgColor="FFEBEE")
+    blue_fill = PatternFill("solid", fgColor="E3F2FD")
+
+    def style_header_row(ws, row, cols):
+        for col in range(1, cols + 1):
+            cell = ws.cell(row=row, column=col)
+            cell.fill = header_fill
+            cell.font = header_font
+            cell.alignment = Alignment(horizontal="center", vertical="center")
+            cell.border = thin
+
+    def auto_width(ws):
+        for col in ws.columns:
+            max_len = 0
+            col_letter = get_column_letter(col[0].column)
+            for cell in col:
+                try:
+                    max_len = max(max_len, len(str(cell.value or "")))
+                except Exception:
+                    pass
+            ws.column_dimensions[col_letter].width = min(max_len + 3, 40)
+
+    # ----- Hoja Resumen -----
+    ws = wb.active
+    ws.title = "Resumen"
+    ws["A1"] = "RECARGA VELOZ — Reporte Contable"
+    ws["A1"].font = title_font
+    ws.merge_cells("A1:D1")
+    ws["A2"] = f"Periodo: {fecha_desde}  →  {fecha_hasta}"
+    ws["A2"].font = subtitle_font
+    ws["A3"] = "Unidad Educativa Dr. José María Velasco Ibarra"
+
+    ws["A5"] = "Concepto"
+    ws["B5"] = "Valor"
+    ws["C5"] = "Cantidad"
+    style_header_row(ws, 5, 3)
+
+    ws["A6"] = "Ingresos (Ventas)"
+    ws["B6"] = round(ingresos[0], 2)
+    ws["C6"] = ingresos[1]
+    ws["A6"].fill = green_fill
+
+    ws["A7"] = "Egresos (Gastos)"
+    ws["B7"] = round(egresos[0], 2)
+    ws["C7"] = egresos[1]
+    ws["A7"].fill = red_fill
+
+    ws["A8"] = "Utilidad / Proyección"
+    ws["B8"] = round(utilidad, 2)
+    ws["C8"] = ""
+    ws["A8"].fill = blue_fill
+    ws["B8"].font = money_font
+
+    for r in range(6, 9):
+        for c in range(1, 4):
+            ws.cell(row=r, column=c).border = thin
+
+    # Datos para gráfico comparativo
+    ws["A10"] = "Ingresos"
+    ws["B10"] = round(ingresos[0], 2)
+    ws["A11"] = "Egresos"
+    ws["B11"] = round(egresos[0], 2)
+    ws["A12"] = "Utilidad"
+    ws["B12"] = round(utilidad, 2)
+
+    chart1 = BarChart()
+    chart1.type = "col"
+    chart1.style = 10
+    chart1.title = "Ingresos vs Egresos vs Utilidad"
+    chart1.y_axis.title = "Monto ($)"
+    data = Reference(ws, min_col=2, min_row=10, max_row=12)
+    cats = Reference(ws, min_col=1, min_row=10, max_row=12)
+    chart1.add_data(data, titles_from_data=False)
+    chart1.set_categories(cats)
+    chart1.shape = 4
+    chart1.width = 15
+    chart1.height = 8
+    ws.add_chart(chart1, "E5")
+
+    auto_width(ws)
+
+    # ----- Hoja Pedidos -----
+    ws2 = wb.create_sheet("Pedidos (Ingresos)")
+    ws2["A1"] = "Detalle de Pedidos / Ingresos"
+    ws2["A1"].font = title_font
+    headers = ["Orden", "Fecha", "Total ($)", "Estado", "Productos", "Categorías"]
+    for i, h in enumerate(headers, 1):
+        ws2.cell(row=3, column=i, value=h)
+    style_header_row(ws2, 3, 6)
+    for i, p in enumerate(pedidos, 4):
+        for j, val in enumerate(p, 1):
+            cell = ws2.cell(row=i, column=j, value=val if not isinstance(val, float) else round(val, 2))
+            cell.border = thin
+    auto_width(ws2)
+
+    # ----- Hoja Gastos -----
+    ws3 = wb.create_sheet("Gastos (Egresos)")
+    ws3["A1"] = "Detalle de Gastos / Egresos"
+    ws3["A1"].font = title_font
+    headers = ["Descripción", "Categoría", "Monto ($)", "Fecha"]
+    for i, h in enumerate(headers, 1):
+        ws3.cell(row=3, column=i, value=h)
+    style_header_row(ws3, 3, 4)
+    for i, g in enumerate(gastos_lista, 4):
+        for j, val in enumerate(g, 1):
+            cell = ws3.cell(row=i, column=j, value=val if not isinstance(val, float) else round(val, 2))
+            cell.border = thin
+    auto_width(ws3)
+
+    # ----- Hoja Productos + gráfico -----
+    ws4 = wb.create_sheet("Productos vendidos")
+    ws4["A1"] = "Productos más vendidos"
+    ws4["A1"].font = title_font
+    headers = ["Producto", "Categoría", "Unidades", "Monto ($)"]
+    for i, h in enumerate(headers, 1):
+        ws4.cell(row=3, column=i, value=h)
+    style_header_row(ws4, 3, 4)
+    for i, t in enumerate(top_productos, 4):
+        for j, val in enumerate(t, 1):
+            cell = ws4.cell(row=i, column=j, value=val if not isinstance(val, float) else round(val, 2))
+            cell.border = thin
+
+    if top_productos:
+        chart2 = BarChart()
+        chart2.type = "col"
+        chart2.style = 10
+        chart2.title = "Unidades vendidas por producto"
+        chart2.y_axis.title = "Unidades"
+        n = len(top_productos)
+        data = Reference(ws4, min_col=3, min_row=3, max_row=3 + n)
+        cats = Reference(ws4, min_col=1, min_row=4, max_row=3 + n)
+        chart2.add_data(data, titles_from_data=True)
+        chart2.set_categories(cats)
+        chart2.shape = 4
+        chart2.width = 18
+        chart2.height = 10
+        ws4.add_chart(chart2, "F3")
+
+    auto_width(ws4)
+
+    # ----- Hoja Categorías + pie -----
+    ws5 = wb.create_sheet("Por categoría")
+    ws5["A1"] = "Ventas por categoría"
+    ws5["A1"].font = title_font
+    ws5["A3"] = "Categoría"
+    ws5["B3"] = "Monto ($)"
+    style_header_row(ws5, 3, 2)
+    for i, c in enumerate(por_categoria, 4):
+        ws5.cell(row=i, column=1, value=c[0] or "Sin categoría").border = thin
+        ws5.cell(row=i, column=2, value=round(c[1] or 0, 2)).border = thin
+
+    if por_categoria:
+        pie = PieChart()
+        pie.title = "Distribución por categoría"
+        n = len(por_categoria)
+        labels = Reference(ws5, min_col=1, min_row=4, max_row=3 + n)
+        data = Reference(ws5, min_col=2, min_row=3, max_row=3 + n)
+        pie.add_data(data, titles_from_data=True)
+        pie.set_categories(labels)
+        pie.dataLabels = DataLabelList()
+        pie.dataLabels.showPercent = True
+        pie.dataLabels.showVal = False
+        pie.width = 14
+        pie.height = 10
+        ws5.add_chart(pie, "D3")
+
+    auto_width(ws5)
+
+    # Guardar en memoria
+    buf = io.BytesIO()
+    wb.save(buf)
+    buf.seek(0)
+
+    resp = make_response(buf.read())
+    resp.headers["Content-Type"] = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    resp.headers["Content-Disposition"] = f"attachment; filename=Reporte_RecargaVeloz_{fecha_desde}_{fecha_hasta}.xlsx"
     return resp
 
 # -----------------------------
