@@ -46,17 +46,33 @@
             .no-print { display: none !important; }
             .section { box-shadow: none; border: 1px solid #ddd; }
         }
+    
+        .inst-header {
+            text-align: center;
+            padding: 8px 12px 4px;
+            margin-bottom: 4px;
+        }
+        .inst-name {
+            font-size: 12px;
+            color: #6b7c93;
+            font-weight: 500;
+            letter-spacing: 0.3px;
+        }
     </style>
 </head>
 <body>
     <div class="container">
+    <div class="inst-header">
+        <span class="inst-name">Unidad Educativa Dr. José María Velasco Ibarra</span>
+    </div>
+
         <div class="dashboard-header no-print" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:10px;">
             <div>
                 <h1 style="color:#1a3c6e;margin:0;">Reportes Ingresos / Egresos</h1>
                 <p style="color:#666;margin:4px 0 0;">Proyección de ventas y gastos</p>
             </div>
             <div>
-                <a href="{{ url_for('dashboard_contable') }}" style="color:#1a3c6e;font-weight:600;text-decoration:none;">← Dashboard</a>
+                <a href="{{ url_for('dashboard_contable') }}" style="color:#1a3c6e;font-weight:600;text-decoration:none;">← Panel</a>
             </div>
         </div>
 

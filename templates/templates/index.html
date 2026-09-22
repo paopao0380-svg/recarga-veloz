@@ -11,13 +11,52 @@
     <link rel="manifest" href="/static/manifest.json">
     <link rel="apple-touch-icon" href="/static/icons/icon-192.png">
     <link rel="icon" type="image/png" sizes="192x192" href="/static/icons/icon-192.png">
-
     <title>Recarga Veloz</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .header {
+            text-align: center;
+            margin-bottom: 18px;
+            padding-top: 8px;
+        }
+        .crest {
+            width: 72px;
+            height: 72px;
+            object-fit: contain;
+            margin-bottom: 8px;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.12));
+        }
+        .school-name {
+            color: #5a6a7a;
+            font-size: 13px;
+            font-weight: 500;
+            letter-spacing: 0.2px;
+            margin: 0 0 6px;
+        }
+        .title {
+            color: #1a3c6e;
+            font-size: 36px;
+            font-weight: 800;
+            margin: 4px 0;
+            letter-spacing: 1px;
+        }
+        .slogan {
+            color: #c41e3a;
+            font-size: 16px;
+            font-style: italic;
+            margin-bottom: 8px;
+        }
+        @media (max-width: 480px) {
+            .crest { width: 60px; height: 60px; }
+            .title { font-size: 28px; }
+            .school-name { font-size: 11px; }
+        }
+    </style>
 </head>
 <body>
     <div class="container">
         <header class="header">
+            <img src="{{ url_for('static', filename='icons/escudo.jpg') }}" alt="Escudo institucional" class="crest">
             <h2 class="school-name">Unidad Educativa Dr. José María Velasco Ibarra</h2>
             <h1 class="title">RECARGA VELOZ</h1>
             <p class="slogan">Tu punto saludable</p>
@@ -32,12 +71,10 @@
                 <img src="https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=500&h=350&fit=crop" alt="Sólidos">
                 <div class="category-title solidos">SÓLIDOS</div>
             </a>
-
             <a href="{{ url_for('categoria', nombre='Bebidas') }}" class="category-card">
                 <img src="https://images.unsplash.com/photo-1622597467836-f3285f2131b8?w=500&h=350&fit=crop" alt="Bebidas">
                 <div class="category-title bebidas">BEBIDAS</div>
             </a>
-
             <a href="{{ url_for('categoria', nombre='Postres') }}" class="category-card">
                 <img src="https://images.unsplash.com/photo-1488477181946-6428a0291777?w=500&h=350&fit=crop" alt="Postres">
                 <div class="category-title postres">POSTRES</div>
@@ -49,7 +86,6 @@
             <a href="{{ url_for('login') }}">🔐 Personal</a>
         </div>
     </div>
-
     <script src="/static/js/app.js"></script>
 </body>
 </html>
