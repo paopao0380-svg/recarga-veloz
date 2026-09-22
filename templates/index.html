@@ -15,31 +15,35 @@
         .membrete-principal {
             display: flex;
             align-items: center;
+            justify-content: center;
             gap: 0;
             background: #fff;
             border-radius: 14px;
             box-shadow: 0 2px 12px rgba(26, 60, 110, 0.08);
             border: 1px solid #e8eef5;
-            margin: 0 0 22px 0;
+            margin: 0 auto 22px auto;
             overflow: hidden;
-            padding: 14px 18px;
+            padding: 14px 20px;
+            max-width: 560px;
+            width: 100%;
+            box-sizing: border-box;
         }
         .membrete-izq {
             display: flex;
             flex-direction: column;
             align-items: center;
             flex-shrink: 0;
-            padding-right: 16px;
+            padding-right: 14px;
         }
         .membrete-izq img {
-            height: 78px;
+            height: 72px;
             width: auto;
-            max-width: 70px;
+            max-width: 64px;
             object-fit: contain;
         }
         .membrete-sigla-bajo {
             margin-top: 4px;
-            font-size: 15px;
+            font-size: 14px;
             font-weight: 900;
             color: #1a3c6e;
             letter-spacing: 2px;
@@ -49,23 +53,22 @@
             align-self: stretch;
             background: #1a3c6e;
             border-radius: 2px;
-            margin-right: 16px;
+            margin-right: 14px;
             flex-shrink: 0;
         }
         .membrete-der {
-            flex: 1;
-            min-width: 0;
+            flex: 0 1 auto;
             text-align: center;
             line-height: 1.25;
         }
         .membrete-der .linea1 {
-            font-size: 13px;
+            font-size: 12px;
             font-weight: 700;
             color: #1a3c6e;
             letter-spacing: 1.5px;
         }
         .membrete-der .linea2 {
-            font-size: 18px;
+            font-size: 16px;
             font-weight: 800;
             color: #1a3c6e;
             margin-top: 2px;
@@ -103,11 +106,14 @@
             margin: 6px 0 0;
         }
         @media (max-width: 520px) {
-            .membrete-principal { padding: 10px 12px; }
-            .membrete-izq img { height: 60px; max-width: 54px; }
+            .membrete-principal {
+                max-width: 100%;
+                padding: 10px 12px;
+            }
+            .membrete-izq img { height: 56px; max-width: 50px; }
             .membrete-sigla-bajo { font-size: 12px; letter-spacing: 1px; }
             .membrete-der .linea1 { font-size: 11px; letter-spacing: 1px; }
-            .membrete-der .linea2 { font-size: 14px; }
+            .membrete-der .linea2 { font-size: 13px; }
             .membrete-der .linea3, .membrete-der .linea4 { font-size: 11px; }
             .membrete-der .linea5 { font-size: 10px; }
             .title { font-size: 28px; }
@@ -117,7 +123,7 @@
 <body>
     <div class="container">
 
-        <!-- Membrete solo en pantalla principal -->
+        <!-- Membrete centrado solo en pantalla principal -->
         <div class="membrete-principal">
             <div class="membrete-izq">
                 <img src="{{ url_for('static', filename='icons/escudo.png') }}"
