@@ -5,8 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#1a3c6e">
     <link rel="manifest" href="/static/manifest.json">
-    <title>Dashboard Contable - Recarga Veloz</title>
+    <title>Panel Contable - Recarga Veloz</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/membrete.css') }}">
+
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <style>
         .dashboard-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; flex-wrap: wrap; gap: 10px; }
@@ -37,13 +39,45 @@
             display: inline-block; background: #e8f0fe; color: #1a3c6e;
             padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600;
         }
+    
+        .inst-header {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 10px 12px 6px;
+            margin-bottom: 6px;
+        }
+        .inst-crest {
+            width: 28px;
+            height: 28px;
+            object-fit: contain;
+        }
+        .inst-name {
+            font-size: 12px;
+            color: #5a6a7a;
+            font-weight: 500;
+            letter-spacing: 0.2px;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="dashboard-header">
+
+    <div class="membrete" style="display:flex;align-items:center;gap:12px;padding:10px 14px;margin:0 0 16px 0;background:linear-gradient(180deg,#f0f4f8 0%,#ffffff 100%);border:1px solid #d0dbe8;border-left:4px solid #1a3c6e;border-radius:10px;box-shadow:0 2px 6px rgba(26,60,110,0.08);width:100%;box-sizing:border-box;">
+      <img src="{{ url_for('static', filename='icons/escudo.png') }}" alt="Escudo" style="width:56px;height:56px;object-fit:contain;flex-shrink:0;" onerror="this.onerror=null;this.src='{{ url_for('static', filename='icons/escudo.jpg') }}';">
+      <div style="flex:1;min-width:0;line-height:1.35;">
+        <div style="font-size:13px;font-weight:800;color:#1a3c6e;">UNIDAD EDUCATIVA “DR. JOSÉ MARÍA VELASCO IBARRA”</div>
+        <div style="font-size:11px;color:#5a6a7a;margin-top:2px;"><strong>AMIE:</strong> 07H00574 · El Guabo – El Oro – Ecuador</div>
+        <div style="font-size:10px;color:#7a8a9a;margin-top:1px;">Panamericana sur entre vía Pasaje y Florentino Sáenz de Villaverde</div>
+      </div>
+      <div style="font-size:12px;font-weight:800;color:#1a3c6e;letter-spacing:1.5px;border-left:1px solid #d0dbe8;padding-left:10px;flex-shrink:0;">UEJMVI</div>
+    </div>
+
+
+    <div class="dashboard-header">
             <div>
-                <h1 style="color:#1a3c6e; margin:0;">Dashboard Contable</h1>
+                <h1 style="color:#1a3c6e; margin:0;">Panel Contable</h1>
                 <p style="color:#666; margin:5px 0 0;">Resumen del día y análisis de ventas</p>
             </div>
             <div class="btn-bar">
@@ -77,6 +111,13 @@
         </div>
 
         <div class="section">
+            <h2>Ingresos vs Egresos (hoy)</h2>
+            <div class="chart-box" style="height:220px;">
+                <canvas id="chartIngresosEgresos"></canvas>
+            </div>
+        </div>
+
+        <div class="section">
             <h2>Productos más vendidos (frecuencia)</h2>
             <div class="chart-box">
                 <canvas id="chartTop"></canvas>
@@ -86,7 +127,7 @@
         {% if stock_bajo %}
         <div class="section">
             <h2>⚠️ Productos con Stock Bajo</h2>
-            {% for p in stock_bajo %}
+            {% for p in stock_bajo|default([]) %}
             <div class="alert-stock">
                 <strong>{{ p.nombre }}</strong> — Stock: {{ p.stock }} (mínimo: {{ p.stock_minimo }})
             </div>
@@ -108,7 +149,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% for p in ultimos_pedidos %}
+                    {% for p in ultimos_pedidos|default([]) %}
                     <tr>
                         <td>{{ p.numero_orden }}</td>
                         <td>{{ p.fecha }}</td>
@@ -142,7 +183,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% for g in ultimos_gastos %}
+                    {% for g in ultimos_gastos|default([]) %}
                     <tr>
                         <td>{{ g.descripcion }}</td>
                         <td>{{ g.categoria }}</td>
@@ -158,8 +199,31 @@
     </div>
 
     <script>
-        const labels = [{% for t in top_productos %}"{{ t.nombre }}"{% if not loop.last %},{% endif %}{% endfor %}];
-        const data = [{% for t in top_productos %}{{ t.total_vendido }}{% if not loop.last %},{% endif %}{% endfor %}];
+        const labels = [{% for t in top_productos|default([]) %}"{{ t.nombre|replace('"', '') }}"{% if not loop.last %},{% endif %}{% endfor %}];
+        const data = [{% for t in top_productos|default([]) %}{{ t.total_vendido }}{% if not loop.last %},{% endif %}{% endfor %}];
+        new Chart(document.getElementById('chartIngresosEgresos'), {
+            type: 'bar',
+            data: {
+                labels: ['Ingresos', 'Egresos', 'Utilidad'],
+                datasets: [{
+                    data: [{{ ventas_hoy.total }}, {{ gastos_hoy.total }}, {{ utilidad }}],
+                    backgroundColor: ['rgba(40,167,69,0.75)', 'rgba(220,53,69,0.75)', 'rgba(26,60,110,0.75)'],
+                    borderRadius: 8,
+                    borderSkipped: false,
+                    barPercentage: 0.45
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' } },
+                    x: { grid: { display: false } }
+                }
+            }
+        });
+
         if (labels.length) {
             new Chart(document.getElementById('chartTop'), {
                 type: 'bar',
@@ -168,14 +232,15 @@
                     datasets: [{
                         label: 'Unidades vendidas',
                         data: data,
-                        backgroundColor: ['#1a3c6e','#c41e3a','#28a745','#fd7e14','#6f42c1','#17a2b8','#ffc107','#e83e8c']
+                        backgroundColor: 'rgba(26, 60, 110, 0.8)',
+                        borderRadius: 6
                     }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: { legend: { display: false } },
-                    scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+                    scales: { y: { beginAtZero: true, ticks: { stepSize: 1 }, grid: { color: 'rgba(0,0,0,0.05)' } }, x: { grid: { display: false } } }
                 }
             });
         }
