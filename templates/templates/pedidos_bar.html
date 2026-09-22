@@ -10,6 +10,8 @@
     <link rel="apple-touch-icon" href="/static/icons/icon-192.png">
     <title>Pedidos - Recarga Veloz</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/membrete.css') }}">
+
     <style>
         .btn-recibo {
             display: inline-block;
@@ -25,25 +27,40 @@
         .order-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 12px; }
     
         .inst-header {
-            text-align: center;
-            padding: 8px 12px 4px;
-            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 10px 12px 6px;
+            margin-bottom: 6px;
+        }
+        .inst-crest {
+            width: 28px;
+            height: 28px;
+            object-fit: contain;
         }
         .inst-name {
             font-size: 12px;
-            color: #6b7c93;
+            color: #5a6a7a;
             font-weight: 500;
-            letter-spacing: 0.3px;
+            letter-spacing: 0.2px;
         }
     </style>
 </head>
 <body>
     <div class="container">
-    <div class="inst-header">
-        <span class="inst-name">Unidad Educativa Dr. José María Velasco Ibarra</span>
+
+    <div class="membrete">
+        <img class="membrete-escudo" src="/static/icons/escudo.png" alt="Escudo institucional" onerror="this.src='/static/icons/escudo.jpg'">
+        <div class="membrete-texto">
+            <p class="membrete-nombre">UNIDAD EDUCATIVA <span>“DR. JOSÉ MARÍA VELASCO IBARRA”</span></p>
+            <p class="membrete-detalle"><strong>AMIE:</strong> 07H00574 · El Guabo – El Oro – Ecuador</p>
+            <p class="membrete-detalle">Panamericana sur entre vía Pasaje y Florentino Sáenz de Villaverde</p>
+        </div>
+        <div class="membrete-sigla">UEJMVI</div>
     </div>
 
-        <header class="top-bar">
+    <header class="top-bar">
             <h1>Pedidos del Bar</h1>
             <a href="{{ url_for('logout') }}" class="back-btn">Cerrar sesión</a>
         </header>

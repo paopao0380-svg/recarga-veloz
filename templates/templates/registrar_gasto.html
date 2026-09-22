@@ -14,6 +14,8 @@
 
     <title>Registrar Gasto - Recarga Veloz</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/membrete.css') }}">
+
     <style>
         .form-box { background: white; max-width: 450px; margin: 40px auto; padding: 30px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); }
         .form-box h1 { color: #1a3c6e; margin-bottom: 25px; text-align: center; }
@@ -26,25 +28,40 @@
         .btn-cancel { background: #6c757d; color: white; }
     
         .inst-header {
-            text-align: center;
-            padding: 8px 12px 4px;
-            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 10px 12px 6px;
+            margin-bottom: 6px;
+        }
+        .inst-crest {
+            width: 28px;
+            height: 28px;
+            object-fit: contain;
         }
         .inst-name {
             font-size: 12px;
-            color: #6b7c93;
+            color: #5a6a7a;
             font-weight: 500;
-            letter-spacing: 0.3px;
+            letter-spacing: 0.2px;
         }
     </style>
 </head>
 <body>
     <div class="container">
-    <div class="inst-header">
-        <span class="inst-name">Unidad Educativa Dr. José María Velasco Ibarra</span>
+
+    <div class="membrete">
+        <img class="membrete-escudo" src="/static/icons/escudo.png" alt="Escudo institucional" onerror="this.src='/static/icons/escudo.jpg'">
+        <div class="membrete-texto">
+            <p class="membrete-nombre">UNIDAD EDUCATIVA <span>“DR. JOSÉ MARÍA VELASCO IBARRA”</span></p>
+            <p class="membrete-detalle"><strong>AMIE:</strong> 07H00574 · El Guabo – El Oro – Ecuador</p>
+            <p class="membrete-detalle">Panamericana sur entre vía Pasaje y Florentino Sáenz de Villaverde</p>
+        </div>
+        <div class="membrete-sigla">UEJMVI</div>
     </div>
 
-        <div class="form-box">
+    <div class="form-box">
             <h1>Registrar Gasto</h1>
             <form method="POST">
                 <div class="form-group">

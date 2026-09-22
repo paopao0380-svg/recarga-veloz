@@ -7,6 +7,8 @@
     <link rel="manifest" href="/static/manifest.json">
     <title>Panel Contable - Recarga Veloz</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/membrete.css') }}">
+
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <style>
         .dashboard-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; flex-wrap: wrap; gap: 10px; }
@@ -39,25 +41,40 @@
         }
     
         .inst-header {
-            text-align: center;
-            padding: 8px 12px 4px;
-            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 10px 12px 6px;
+            margin-bottom: 6px;
+        }
+        .inst-crest {
+            width: 28px;
+            height: 28px;
+            object-fit: contain;
         }
         .inst-name {
             font-size: 12px;
-            color: #6b7c93;
+            color: #5a6a7a;
             font-weight: 500;
-            letter-spacing: 0.3px;
+            letter-spacing: 0.2px;
         }
     </style>
 </head>
 <body>
     <div class="container">
-    <div class="inst-header">
-        <span class="inst-name">Unidad Educativa Dr. José María Velasco Ibarra</span>
+
+    <div class="membrete">
+        <img class="membrete-escudo" src="/static/icons/escudo.png" alt="Escudo institucional" onerror="this.src='/static/icons/escudo.jpg'">
+        <div class="membrete-texto">
+            <p class="membrete-nombre">UNIDAD EDUCATIVA <span>“DR. JOSÉ MARÍA VELASCO IBARRA”</span></p>
+            <p class="membrete-detalle"><strong>AMIE:</strong> 07H00574 · El Guabo – El Oro – Ecuador</p>
+            <p class="membrete-detalle">Panamericana sur entre vía Pasaje y Florentino Sáenz de Villaverde</p>
+        </div>
+        <div class="membrete-sigla">UEJMVI</div>
     </div>
 
-        <div class="dashboard-header">
+    <div class="dashboard-header">
             <div>
                 <h1 style="color:#1a3c6e; margin:0;">Panel Contable</h1>
                 <p style="color:#666; margin:5px 0 0;">Resumen del día y análisis de ventas</p>
