@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#1a3c6e">
+    <link rel="manifest" href="/static/manifest.json">
+    <title>Panel Contable - Recarga Veloz</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/membrete.css') }}">
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <style>
+        .dashboard-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; flex-wrap: wrap; gap: 10px; }
+        .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 25px; }
+        .card { background: white; padding: 18px; border-radius: 14px; box-shadow: 0 3px 12px rgba(0,0,0,0.07); text-align: center; }
+        .card h3 { font-size: 13px; color: #666; margin-bottom: 8px; }
+        .card .value { font-size: 26px; font-weight: 800; }
+        .card.ventas .value { color: #28a745; }
+        .card.gastos .value { color: #dc3545; }
+        .card.utilidad .value { color: #1a3c6e; }
+        .card.pedidos .value { color: #fd7e14; }
+        .section { background: white; border-radius: 14px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.06); }
+        .section h2 { color: #1a3c6e; margin-bottom: 15px; font-size: 17px; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        th, td { padding: 10px 8px; text-align: left; border-bottom: 1px solid #eee; }
+        th { color: #666; font-weight: 600; }
+        .alert-stock { background: #fff3cd; border-left: 4px solid #ffc107; padding: 12px; margin-bottom: 10px; border-radius: 6px; }
+        .btn-bar a {
+            display: inline-block; margin: 4px; padding: 10px 16px; border-radius: 8px;
+            text-decoration: none; font-weight: 600; font-size: 14px;
+        }
+        .btn-reportes { background: #1a3c6e; color: white; }
+        .btn-gasto { background: #28a745; color: white; }
+        .btn-admin { background: #6c757d; color: white; }
+        .btn-salir { background: #dc3545; color: white; }
+        .chart-box { height: 260px; position: relative; }
+        .cat-badge {
+            display: inline-block; background: #e8f0fe; color: #1a3c6e;
+            padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600;
+        }
+    
+        .inst-header {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 10px 12px 6px;
+            margin-bottom: 6px;
+        }
+        .inst-crest {
+            width: 28px;
+            height: 28px;
+            object-fit: contain;
+        }
+        .inst-name {
+            font-size: 12px;
+            color: #5a6a7a;
+            font-weight: 500;
+            letter-spacing: 0.2px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+
+    <div class="membrete">
+        <img class="membrete-escudo" src="/static/icons/escudo.png" alt="Escudo institucional" onerror="this.src='/static/icons/escudo.jpg'">
+        <div class="membrete-texto">
+            <p class="membrete-nombre">UNIDAD EDUCATIVA <span>“DR. JOSÉ MARÍA VELASCO IBARRA”</span></p>
+            <p class="membrete-detalle"><strong>AMIE:</strong> 07H00574 · El Guabo – El Oro – Ecuador</p>
+            <p class="membrete-detalle">Panamericana sur entre vía Pasaje y Florentino Sáenz de Villaverde</p>
+        </div>
+        <div class="membrete-sigla">UEJMVI</div>
+    </div>
+
+    <div class="dashboard-header">
+            <div>
+                <h1 style="color:#1a3c6e; margin:0;">Panel Contable</h1>
+                <p style="color:#666; margin:5px 0 0;">Resumen del día y análisis de ventas</p>
+            </div>
+            <div class="btn-bar">
+                <a href="{{ url_for('reportes_contable') }}" class="btn-reportes">📊 Reportes</a>
+                <a href="{{ url_for('registrar_gasto') }}" class="btn-gasto">+ Gasto</a>
+                {% if current_user.rol == 'admin' %}
+                <a href="{{ url_for('admin_panel') }}" class="btn-admin">Admin</a>
+                {% endif %}
+                <a href="{{ url_for('logout') }}" class="btn-salir">Salir</a>
+            </div>
+        </div>
+
+        <div class="cards">
+            <div class="card ventas">
+                <h3>Ventas del Día</h3>
+                <div class="value">${{ '%.2f'|format(ventas_hoy.total) }}</div>
+                <small>{{ ventas_hoy.cantidad }} pedidos</small>
+            </div>
+            <div class="card gastos">
+                <h3>Gastos del Día</h3>
+                <div class="value">${{ '%.2f'|format(gastos_hoy.total) }}</div>
+            </div>
+            <div class="card utilidad">
+                <h3>Utilidad Estimada</h3>
+                <div class="value">${{ '%.2f'|format(utilidad) }}</div>
+            </div>
+            <div class="card pedidos">
+                <h3>Pedidos Atendidos</h3>
+                <div class="value">{{ ventas_hoy.cantidad }}</div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Ingresos vs Egresos (hoy)</h2>
+            <div class="chart-box" style="height:220px;">
+                <canvas id="chartIngresosEgresos"></canvas>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Productos más vendidos (frecuencia)</h2>
+            <div class="chart-box">
+                <canvas id="chartTop"></canvas>
+            </div>
+        </div>
+
+        {% if stock_bajo %}
+        <div class="section">
+            <h2>⚠️ Productos con Stock Bajo</h2>
+            {% for p in stock_bajo|default([]) %}
+            <div class="alert-stock">
+                <strong>{{ p.nombre }}</strong> — Stock: {{ p.stock }} (mínimo: {{ p.stock_minimo }})
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <div class="section">
+            <h2>Últimos Pedidos</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Orden</th>
+                        <th>Fecha</th>
+                        <th>Productos</th>
+                        <th>Categoría</th>
+                        <th>Total</th>
+                        <th>Estado</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p in ultimos_pedidos|default([]) %}
+                    <tr>
+                        <td>{{ p.numero_orden }}</td>
+                        <td>{{ p.fecha }}</td>
+                        <td>{{ p.productos or '-' }}</td>
+                        <td>
+                            {% if p.categorias %}
+                                {% for cat in p.categorias.split(', ') %}
+                                <span class="cat-badge">{{ cat }}</span>
+                                {% endfor %}
+                            {% else %}-{% endif %}
+                        </td>
+                        <td>${{ '%.2f'|format(p.total) }}</td>
+                        <td>{{ p.estado }}</td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="6">No hay pedidos aún</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="section">
+            <h2>Últimos Gastos</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Descripción</th>
+                        <th>Categoría</th>
+                        <th>Monto</th>
+                        <th>Fecha</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for g in ultimos_gastos|default([]) %}
+                    <tr>
+                        <td>{{ g.descripcion }}</td>
+                        <td>{{ g.categoria }}</td>
+                        <td>${{ '%.2f'|format(g.monto) }}</td>
+                        <td>{{ g.fecha }}</td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="4">No hay gastos registrados</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const labels = [{% for t in top_productos|default([]) %}"{{ t.nombre|replace('"', '') }}"{% if not loop.last %},{% endif %}{% endfor %}];
+        const data = [{% for t in top_productos|default([]) %}{{ t.total_vendido }}{% if not loop.last %},{% endif %}{% endfor %}];
+        new Chart(document.getElementById('chartIngresosEgresos'), {
+            type: 'bar',
+            data: {
+                labels: ['Ingresos', 'Egresos', 'Utilidad'],
+                datasets: [{
+                    data: [{{ ventas_hoy.total }}, {{ gastos_hoy.total }}, {{ utilidad }}],
+                    backgroundColor: ['rgba(40,167,69,0.75)', 'rgba(220,53,69,0.75)', 'rgba(26,60,110,0.75)'],
+                    borderRadius: 8,
+                    borderSkipped: false,
+                    barPercentage: 0.45
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' } },
+                    x: { grid: { display: false } }
+                }
+            }
+        });
+
+        if (labels.length) {
+            new Chart(document.getElementById('chartTop'), {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Unidades vendidas',
+                        data: data,
+                        backgroundColor: 'rgba(26, 60, 110, 0.8)',
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true, ticks: { stepSize: 1 }, grid: { color: 'rgba(0,0,0,0.05)' } }, x: { grid: { display: false } } }
+                }
+            });
+        }
+    </script>
+    <script src="/static/js/app.js"></script>
+</body>
+</html>
