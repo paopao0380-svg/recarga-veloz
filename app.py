@@ -1,10 +1,12 @@
-from flask import Flask, render_template, request, redirect, url_for, session, flash
+from flask import Flask, render_template, request, redirect, url_for, session, flash, make_response
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from werkzeug.utils import secure_filename
 from datetime import datetime, timedelta
 import sqlite3
 import os
 import uuid
+import csv
+import io
 
 app = Flask(__name__)
 app.secret_key = "recarga_veloz_secreto_2026"
@@ -162,8 +164,8 @@ def agregar(producto_id):
     carrito = session["carrito"]
     carrito[str(producto_id)] = carrito.get(str(producto_id), 0) + 1
     session["carrito"] = carrito
-    flash("Producto agregado", "success")
-    return redirect(request.referrer or url_for("index"))
+    flash("Producto agregado al carrito. Puedes cambiar la cantidad o seguir comprando.", "success")
+    return redirect(url_for("carrito"))
 
 @app.route("/carrito")
 def carrito():
@@ -306,6 +308,28 @@ def cambiar_estado(pedido_id, estado):
     conn.close()
     return redirect(url_for("pedidos_bar"))
 
+@app.route("/recibo/<int:pedido_id>")
+@login_required
+def recibo(pedido_id):
+    """Comprobante de pago imprimible para el cajero"""
+    if current_user.rol not in ["cajero", "admin"]:
+        return redirect(url_for("index"))
+    conn = get_db()
+    pedido = conn.execute("SELECT * FROM pedidos WHERE id = ?", (pedido_id,)).fetchone()
+    if not pedido:
+        conn.close()
+        flash("Pedido no encontrado", "error")
+        return redirect(url_for("pedidos_bar"))
+    detalles = conn.execute("""
+        SELECT d.cantidad, d.precio_unitario, pr.nombre, c.nombre as categoria
+        FROM detalle_pedidos d
+        JOIN productos pr ON d.producto_id = pr.id
+        LEFT JOIN categorias c ON pr.categoria_id = c.id
+        WHERE d.pedido_id = ?
+    """, (pedido_id,)).fetchall()
+    conn.close()
+    return render_template("recibo.html", pedido=pedido, detalles=detalles)
+
 # -----------------------------
 # Panel de Administración
 # -----------------------------
@@ -425,36 +449,51 @@ def dashboard_contable():
         return redirect(url_for("index"))
     conn = get_db()
     
-    # Ventas del día
     hoy = datetime.now().strftime("%Y-%m-%d")
     ventas_hoy = conn.execute(
         "SELECT COALESCE(SUM(total), 0) as total, COUNT(*) as cantidad FROM pedidos WHERE fecha LIKE ?",
         (hoy + "%",)
     ).fetchone()
     
-    # Gastos del día
     gastos_hoy = conn.execute(
         "SELECT COALESCE(SUM(monto), 0) as total FROM gastos WHERE fecha LIKE ?",
         (hoy + "%",)
     ).fetchone()
     
-    # Últimos pedidos
-    ultimos_pedidos = conn.execute(
-        "SELECT * FROM pedidos ORDER BY id DESC LIMIT 10"
-    ).fetchall()
+    # Últimos pedidos CON productos y categorías
+    ultimos_pedidos = conn.execute("""
+        SELECT p.*,
+               GROUP_CONCAT(pr.nombre || ' x' || d.cantidad, ', ') as productos,
+               GROUP_CONCAT(DISTINCT c.nombre, ', ') as categorias
+        FROM pedidos p
+        LEFT JOIN detalle_pedidos d ON p.id = d.pedido_id
+        LEFT JOIN productos pr ON d.producto_id = pr.id
+        LEFT JOIN categorias c ON pr.categoria_id = c.id
+        GROUP BY p.id
+        ORDER BY p.id DESC
+        LIMIT 15
+    """).fetchall()
     
-    # Últimos gastos
     ultimos_gastos = conn.execute(
         "SELECT * FROM gastos ORDER BY id DESC LIMIT 10"
     ).fetchall()
     
-    # Productos con stock bajo
     stock_bajo = conn.execute(
         "SELECT * FROM productos WHERE stock <= stock_minimo AND activo = 1"
     ).fetchall()
     
-    conn.close()
+    # Top productos (para gráfico)
+    top_productos = conn.execute("""
+        SELECT pr.nombre, c.nombre as categoria, SUM(d.cantidad) as total_vendido
+        FROM detalle_pedidos d
+        JOIN productos pr ON d.producto_id = pr.id
+        LEFT JOIN categorias c ON pr.categoria_id = c.id
+        GROUP BY pr.id
+        ORDER BY total_vendido DESC
+        LIMIT 8
+    """).fetchall()
     
+    conn.close()
     utilidad = ventas_hoy["total"] - gastos_hoy["total"]
     
     return render_template("contable.html",
@@ -463,7 +502,8 @@ def dashboard_contable():
         utilidad=utilidad,
         ultimos_pedidos=ultimos_pedidos,
         ultimos_gastos=ultimos_gastos,
-        stock_bajo=stock_bajo
+        stock_bajo=stock_bajo,
+        top_productos=top_productos
     )
 
 @app.route("/contable/gasto", methods=["GET", "POST"])
@@ -485,6 +525,183 @@ def registrar_gasto():
         flash("Gasto registrado", "success")
         return redirect(url_for("dashboard_contable"))
     return render_template("registrar_gasto.html")
+
+@app.route("/contable/reportes", methods=["GET", "POST"])
+@login_required
+def reportes_contable():
+    """Reportes por rango de fechas: semanal, mensual o personalizado"""
+    if current_user.rol not in ["contador", "admin"]:
+        return redirect(url_for("index"))
+    
+    hoy = datetime.now().date()
+    periodo = request.values.get("periodo", "")
+    
+    # Periodos rápidos
+    if periodo == "semana":
+        fecha_desde = (hoy - timedelta(days=7)).strftime("%Y-%m-%d")
+        fecha_hasta = hoy.strftime("%Y-%m-%d")
+    elif periodo == "mes":
+        fecha_desde = hoy.replace(day=1).strftime("%Y-%m-%d")
+        fecha_hasta = hoy.strftime("%Y-%m-%d")
+    else:
+        # Calendario personalizado o valores por defecto
+        fecha_desde = request.values.get("fecha_desde") or request.values.get("desde") or (hoy - timedelta(days=7)).strftime("%Y-%m-%d")
+        fecha_hasta = request.values.get("fecha_hasta") or request.values.get("hasta") or hoy.strftime("%Y-%m-%d")
+    
+    conn = get_db()
+    
+    ingresos = conn.execute("""
+        SELECT COALESCE(SUM(total), 0) as total, COUNT(*) as cantidad
+        FROM pedidos WHERE date(fecha) BETWEEN ? AND ?
+    """, (fecha_desde, fecha_hasta)).fetchone()
+    
+    egresos = conn.execute("""
+        SELECT COALESCE(SUM(monto), 0) as total, COUNT(*) as cantidad
+        FROM gastos WHERE date(fecha) BETWEEN ? AND ?
+    """, (fecha_desde, fecha_hasta)).fetchone()
+    
+    pedidos = conn.execute("""
+        SELECT p.*,
+               GROUP_CONCAT(pr.nombre || ' x' || d.cantidad, ', ') as productos,
+               GROUP_CONCAT(DISTINCT c.nombre, ', ') as categorias
+        FROM pedidos p
+        LEFT JOIN detalle_pedidos d ON p.id = d.pedido_id
+        LEFT JOIN productos pr ON d.producto_id = pr.id
+        LEFT JOIN categorias c ON pr.categoria_id = c.id
+        WHERE date(p.fecha) BETWEEN ? AND ?
+        GROUP BY p.id
+        ORDER BY p.fecha DESC
+    """, (fecha_desde, fecha_hasta)).fetchall()
+    
+    gastos_lista = conn.execute("""
+        SELECT * FROM gastos WHERE date(fecha) BETWEEN ? AND ? ORDER BY fecha DESC
+    """, (fecha_desde, fecha_hasta)).fetchall()
+    
+    top_productos = conn.execute("""
+        SELECT pr.nombre, c.nombre as categoria, SUM(d.cantidad) as total_vendido,
+               SUM(d.cantidad * d.precio_unitario) as monto
+        FROM detalle_pedidos d
+        JOIN productos pr ON d.producto_id = pr.id
+        LEFT JOIN categorias c ON pr.categoria_id = c.id
+        JOIN pedidos p ON d.pedido_id = p.id
+        WHERE date(p.fecha) BETWEEN ? AND ?
+        GROUP BY pr.id
+        ORDER BY total_vendido DESC
+        LIMIT 10
+    """, (fecha_desde, fecha_hasta)).fetchall()
+    
+    por_categoria = conn.execute("""
+        SELECT c.nombre as categoria, SUM(d.cantidad) as unidades,
+               SUM(d.cantidad * d.precio_unitario) as monto
+        FROM detalle_pedidos d
+        JOIN productos pr ON d.producto_id = pr.id
+        LEFT JOIN categorias c ON pr.categoria_id = c.id
+        JOIN pedidos p ON d.pedido_id = p.id
+        WHERE date(p.fecha) BETWEEN ? AND ?
+        GROUP BY c.id
+        ORDER BY monto DESC
+    """, (fecha_desde, fecha_hasta)).fetchall()
+    
+    conn.close()
+    
+    utilidad = ingresos["total"] - egresos["total"]
+    
+    return render_template("reportes.html",
+        fecha_desde=fecha_desde,
+        fecha_hasta=fecha_hasta,
+        periodo=periodo,
+        ingresos=ingresos,
+        egresos=egresos,
+        utilidad=utilidad,
+        pedidos=pedidos,
+        gastos_lista=gastos_lista,
+        top_productos=top_productos,
+        por_categoria=por_categoria
+    )
+
+@app.route("/contable/reportes/excel")
+@login_required
+def reportes_excel():
+    """Descargar reporte en Excel (CSV compatible con Excel)"""
+    if current_user.rol not in ["contador", "admin"]:
+        return redirect(url_for("index"))
+    
+    fecha_desde = request.args.get("desde", (datetime.now().date() - timedelta(days=7)).strftime("%Y-%m-%d"))
+    fecha_hasta = request.args.get("hasta", datetime.now().date().strftime("%Y-%m-%d"))
+    
+    conn = get_db()
+    
+    output = io.StringIO()
+    writer = csv.writer(output, delimiter=';')
+    
+    writer.writerow(["RECARGA VELOZ - REPORTE CONTABLE"])
+    writer.writerow(["Periodo", fecha_desde, "a", fecha_hasta])
+    writer.writerow([])
+    
+    ingresos = conn.execute(
+        "SELECT COALESCE(SUM(total),0), COUNT(*) FROM pedidos WHERE date(fecha) BETWEEN ? AND ?",
+        (fecha_desde, fecha_hasta)
+    ).fetchone()
+    egresos = conn.execute(
+        "SELECT COALESCE(SUM(monto),0), COUNT(*) FROM gastos WHERE date(fecha) BETWEEN ? AND ?",
+        (fecha_desde, fecha_hasta)
+    ).fetchone()
+    
+    writer.writerow(["RESUMEN"])
+    writer.writerow(["Ingresos (ventas)", f"{ingresos[0]:.2f}"])
+    writer.writerow(["Cantidad de pedidos", ingresos[1]])
+    writer.writerow(["Egresos (gastos)", f"{egresos[0]:.2f}"])
+    writer.writerow(["Cantidad de gastos", egresos[1]])
+    writer.writerow(["Utilidad", f"{ingresos[0]-egresos[0]:.2f}"])
+    writer.writerow([])
+    
+    writer.writerow(["PEDIDOS / INGRESOS"])
+    writer.writerow(["Orden", "Fecha", "Total", "Estado", "Productos", "Categorias"])
+    for p in conn.execute("""
+        SELECT p.numero_orden, p.fecha, p.total, p.estado,
+               GROUP_CONCAT(pr.nombre || ' x' || d.cantidad, ', '),
+               GROUP_CONCAT(DISTINCT c.nombre, ', ')
+        FROM pedidos p
+        LEFT JOIN detalle_pedidos d ON p.id = d.pedido_id
+        LEFT JOIN productos pr ON d.producto_id = pr.id
+        LEFT JOIN categorias c ON pr.categoria_id = c.id
+        WHERE date(p.fecha) BETWEEN ? AND ?
+        GROUP BY p.id ORDER BY p.fecha
+    """, (fecha_desde, fecha_hasta)):
+        writer.writerow(list(p))
+    
+    writer.writerow([])
+    writer.writerow(["GASTOS / EGRESOS"])
+    writer.writerow(["Descripcion", "Categoria", "Monto", "Fecha"])
+    for g in conn.execute(
+        "SELECT descripcion, categoria, monto, fecha FROM gastos WHERE date(fecha) BETWEEN ? AND ? ORDER BY fecha",
+        (fecha_desde, fecha_hasta)
+    ):
+        writer.writerow(list(g))
+    
+    writer.writerow([])
+    writer.writerow(["PRODUCTOS MAS VENDIDOS"])
+    writer.writerow(["Producto", "Categoria", "Unidades", "Monto"])
+    for t in conn.execute("""
+        SELECT pr.nombre, c.nombre, SUM(d.cantidad), SUM(d.cantidad * d.precio_unitario)
+        FROM detalle_pedidos d
+        JOIN productos pr ON d.producto_id = pr.id
+        LEFT JOIN categorias c ON pr.categoria_id = c.id
+        JOIN pedidos p ON d.pedido_id = p.id
+        WHERE date(p.fecha) BETWEEN ? AND ?
+        GROUP BY pr.id ORDER BY SUM(d.cantidad) DESC
+    """, (fecha_desde, fecha_hasta)):
+        writer.writerow(list(t))
+    
+    conn.close()
+    
+    output.seek(0)
+    # BOM para que Excel abra bien los acentos
+    data = "﻿" + output.getvalue()
+    resp = make_response(data.encode("utf-8"))
+    resp.headers["Content-Type"] = "text/csv; charset=utf-8"
+    resp.headers["Content-Disposition"] = f"attachment; filename=reporte_recarga_veloz_{fecha_desde}_{fecha_hasta}.csv"
+    return resp
 
 # -----------------------------
 
