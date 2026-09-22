@@ -104,6 +104,13 @@
             </div>
         </div>
 
+
+        <div class="section">
+            <h2>Comparativo Ingresos vs Egresos</h2>
+            <div class="chart-box" style="height:240px;">
+                <canvas id="chartIngresosEgresos"></canvas>
+            </div>
+        </div>
         <div class="section">
             <h2>Productos más vendidos</h2>
             <div class="chart-box">
@@ -194,7 +201,7 @@
                     datasets: [{
                         label: 'Unidades vendidas',
                         data: topData,
-                        backgroundColor: '#1a3c6e'
+                        backgroundColor: 'rgba(26, 60, 110, 0.8)', borderRadius: 6
                     }]
                 },
                 options: {
@@ -212,12 +219,48 @@
                     labels: catLabels,
                     datasets: [{
                         data: catData,
-                        backgroundColor: ['#1a3c6e', '#c41e3a', '#28a745', '#fd7e14', '#6f42c1']
+                        backgroundColor: ['#1a3c6e', '#c41e3a', '#28a745', '#fd7e14', '#6f42c1'],
+                        borderWidth: 0
                     }]
                 },
-                options: { responsive: true, maintainAspectRatio: false }
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 12 } } } }
+                }
             });
         }
+
+        // Comparativo Ingresos vs Egresos
+        new Chart(document.getElementById('chartIngresosEgresos'), {
+            type: 'bar',
+            data: {
+                labels: ['Ingresos', 'Egresos', 'Utilidad'],
+                datasets: [{
+                    data: [{{ ingresos.total }}, {{ egresos.total }}, {{ utilidad }}],
+                    backgroundColor: ['rgba(40, 167, 69, 0.75)', 'rgba(220, 53, 69, 0.75)', 'rgba(26, 60, 110, 0.75)'],
+                    borderRadius: 8,
+                    borderSkipped: false,
+                    barPercentage: 0.5
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: 'rgba(0,0,0,0.05)' },
+                        ticks: { font: { size: 11 } }
+                    },
+                    x: {
+                        grid: { display: false },
+                        ticks: { font: { size: 12, weight: '600' } }
+                    }
+                }
+            }
+        });
     </script>
 </body>
 </html>

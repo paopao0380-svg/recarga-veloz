@@ -77,6 +77,13 @@
         </div>
 
         <div class="section">
+            <h2>Ingresos vs Egresos (hoy)</h2>
+            <div class="chart-box" style="height:220px;">
+                <canvas id="chartIngresosEgresos"></canvas>
+            </div>
+        </div>
+
+        <div class="section">
             <h2>Productos más vendidos (frecuencia)</h2>
             <div class="chart-box">
                 <canvas id="chartTop"></canvas>
@@ -160,6 +167,29 @@
     <script>
         const labels = [{% for t in top_productos|default([]) %}"{{ t.nombre|replace('"', '') }}"{% if not loop.last %},{% endif %}{% endfor %}];
         const data = [{% for t in top_productos|default([]) %}{{ t.total_vendido }}{% if not loop.last %},{% endif %}{% endfor %}];
+        new Chart(document.getElementById('chartIngresosEgresos'), {
+            type: 'bar',
+            data: {
+                labels: ['Ingresos', 'Egresos', 'Utilidad'],
+                datasets: [{
+                    data: [{{ ventas_hoy.total }}, {{ gastos_hoy.total }}, {{ utilidad }}],
+                    backgroundColor: ['rgba(40,167,69,0.75)', 'rgba(220,53,69,0.75)', 'rgba(26,60,110,0.75)'],
+                    borderRadius: 8,
+                    borderSkipped: false,
+                    barPercentage: 0.45
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' } },
+                    x: { grid: { display: false } }
+                }
+            }
+        });
+
         if (labels.length) {
             new Chart(document.getElementById('chartTop'), {
                 type: 'bar',
@@ -168,14 +198,15 @@
                     datasets: [{
                         label: 'Unidades vendidas',
                         data: data,
-                        backgroundColor: ['#1a3c6e','#c41e3a','#28a745','#fd7e14','#6f42c1','#17a2b8','#ffc107','#e83e8c']
+                        backgroundColor: 'rgba(26, 60, 110, 0.8)',
+                        borderRadius: 6
                     }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: { legend: { display: false } },
-                    scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+                    scales: { y: { beginAtZero: true, ticks: { stepSize: 1 }, grid: { color: 'rgba(0,0,0,0.05)' } }, x: { grid: { display: false } } }
                 }
             });
         }
