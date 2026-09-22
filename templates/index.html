@@ -11,6 +11,8 @@
     <link rel="apple-touch-icon" href="/static/icons/icon-192.png">
     <title>Recarga Veloz</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/membrete.css') }}">
+
     <style>
         .header {
             text-align: center;
@@ -55,12 +57,19 @@
 </head>
 <body>
     <div class="container">
+
+    <div class="membrete" style="display:flex;align-items:center;gap:12px;padding:10px 14px;margin:0 0 16px 0;background:linear-gradient(180deg,#f0f4f8 0%,#ffffff 100%);border:1px solid #d0dbe8;border-left:4px solid #1a3c6e;border-radius:10px;box-shadow:0 2px 6px rgba(26,60,110,0.08);width:100%;box-sizing:border-box;">
+      <img src="{{ url_for('static', filename='icons/escudo.png') }}" alt="Escudo" style="width:56px;height:56px;object-fit:contain;flex-shrink:0;" onerror="this.onerror=null;this.src='{{ url_for('static', filename='icons/escudo.jpg') }}';">
+      <div style="flex:1;min-width:0;line-height:1.35;">
+        <div style="font-size:13px;font-weight:800;color:#1a3c6e;">UNIDAD EDUCATIVA “DR. JOSÉ MARÍA VELASCO IBARRA”</div>
+        <div style="font-size:11px;color:#5a6a7a;margin-top:2px;"><strong>AMIE:</strong> 07H00574 · El Guabo – El Oro – Ecuador</div>
+        <div style="font-size:10px;color:#7a8a9a;margin-top:1px;">Panamericana sur entre vía Pasaje y Florentino Sáenz de Villaverde</div>
+      </div>
+      <div style="font-size:12px;font-weight:800;color:#1a3c6e;letter-spacing:1.5px;border-left:1px solid #d0dbe8;padding-left:10px;flex-shrink:0;">UEJMVI</div>
+    </div>
+
+
         <header class="header">
-            <img class="crest"
-                 src="{{ url_for('static', filename='icons/escudo.png') }}"
-                 alt="Escudo U.E. Dr. José María Velasco Ibarra"
-                 onerror="this.src='{{ url_for('static', filename='icons/escudo.jpg') }}'">
-            <h2 class="school-name">Unidad Educativa Dr. José María Velasco Ibarra</h2>
             <h1 class="title">RECARGA VELOZ</h1>
             <p class="slogan">Tu punto saludable</p>
         </header>
