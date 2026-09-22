@@ -41,15 +41,16 @@
 <body>
     <div class="container">
 
-    <div class="membrete">
-        <img class="membrete-escudo" src="/static/icons/escudo.png" alt="Escudo institucional" onerror="this.src='/static/icons/escudo.jpg'">
-        <div class="membrete-texto">
-            <p class="membrete-nombre">UNIDAD EDUCATIVA <span>“DR. JOSÉ MARÍA VELASCO IBARRA”</span></p>
-            <p class="membrete-detalle"><strong>AMIE:</strong> 07H00574 · El Guabo – El Oro – Ecuador</p>
-            <p class="membrete-detalle">Panamericana sur entre vía Pasaje y Florentino Sáenz de Villaverde</p>
-        </div>
-        <div class="membrete-sigla">UEJMVI</div>
+    <div class="membrete" style="display:flex;align-items:center;gap:12px;padding:10px 14px;margin:0 0 16px 0;background:linear-gradient(180deg,#f0f4f8 0%,#ffffff 100%);border:1px solid #d0dbe8;border-left:4px solid #1a3c6e;border-radius:10px;box-shadow:0 2px 6px rgba(26,60,110,0.08);width:100%;box-sizing:border-box;">
+      <img src="{{ url_for('static', filename='icons/escudo.png') }}" alt="Escudo" style="width:56px;height:56px;object-fit:contain;flex-shrink:0;" onerror="this.onerror=null;this.src='{{ url_for('static', filename='icons/escudo.jpg') }}';">
+      <div style="flex:1;min-width:0;line-height:1.35;">
+        <div style="font-size:13px;font-weight:800;color:#1a3c6e;">UNIDAD EDUCATIVA “DR. JOSÉ MARÍA VELASCO IBARRA”</div>
+        <div style="font-size:11px;color:#5a6a7a;margin-top:2px;"><strong>AMIE:</strong> 07H00574 · El Guabo – El Oro – Ecuador</div>
+        <div style="font-size:10px;color:#7a8a9a;margin-top:1px;">Panamericana sur entre vía Pasaje y Florentino Sáenz de Villaverde</div>
+      </div>
+      <div style="font-size:12px;font-weight:800;color:#1a3c6e;letter-spacing:1.5px;border-left:1px solid #d0dbe8;padding-left:10px;flex-shrink:0;">UEJMVI</div>
     </div>
+
 
     <header class="top-bar">
             <a href="{{ url_for('index') }}" class="back-btn">← Volver</a>
