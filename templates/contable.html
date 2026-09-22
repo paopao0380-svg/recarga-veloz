@@ -4,32 +4,39 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#1a3c6e">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Recarga Veloz">
     <link rel="manifest" href="/static/manifest.json">
-    <link rel="apple-touch-icon" href="/static/icons/icon-192.png">
-    <link rel="icon" type="image/png" sizes="192x192" href="/static/icons/icon-192.png">
-
     <title>Dashboard Contable - Recarga Veloz</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <style>
         .dashboard-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; flex-wrap: wrap; gap: 10px; }
-        .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 30px; }
-        .card { background: white; padding: 20px; border-radius: 14px; box-shadow: 0 3px 12px rgba(0,0,0,0.07); text-align: center; }
-        .card h3 { font-size: 14px; color: #666; margin-bottom: 8px; }
-        .card .value { font-size: 28px; font-weight: 800; }
+        .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 25px; }
+        .card { background: white; padding: 18px; border-radius: 14px; box-shadow: 0 3px 12px rgba(0,0,0,0.07); text-align: center; }
+        .card h3 { font-size: 13px; color: #666; margin-bottom: 8px; }
+        .card .value { font-size: 26px; font-weight: 800; }
         .card.ventas .value { color: #28a745; }
         .card.gastos .value { color: #dc3545; }
         .card.utilidad .value { color: #1a3c6e; }
         .card.pedidos .value { color: #fd7e14; }
         .section { background: white; border-radius: 14px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.06); }
-        .section h2 { color: #1a3c6e; margin-bottom: 15px; font-size: 18px; }
-        table { width: 100%; border-collapse: collapse; }
-        th, td { padding: 10px; text-align: left; border-bottom: 1px solid #eee; font-size: 14px; }
+        .section h2 { color: #1a3c6e; margin-bottom: 15px; font-size: 17px; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        th, td { padding: 10px 8px; text-align: left; border-bottom: 1px solid #eee; }
         th { color: #666; font-weight: 600; }
         .alert-stock { background: #fff3cd; border-left: 4px solid #ffc107; padding: 12px; margin-bottom: 10px; border-radius: 6px; }
+        .btn-bar a {
+            display: inline-block; margin: 4px; padding: 10px 16px; border-radius: 8px;
+            text-decoration: none; font-weight: 600; font-size: 14px;
+        }
+        .btn-reportes { background: #1a3c6e; color: white; }
+        .btn-gasto { background: #28a745; color: white; }
+        .btn-admin { background: #6c757d; color: white; }
+        .btn-salir { background: #dc3545; color: white; }
+        .chart-box { height: 260px; position: relative; }
+        .cat-badge {
+            display: inline-block; background: #e8f0fe; color: #1a3c6e;
+            padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600;
+        }
     </style>
 </head>
 <body>
@@ -37,14 +44,15 @@
         <div class="dashboard-header">
             <div>
                 <h1 style="color:#1a3c6e; margin:0;">Dashboard Contable</h1>
-                <p style="color:#666; margin:5px 0 0;">Resumen financiero del día</p>
+                <p style="color:#666; margin:5px 0 0;">Resumen del día y análisis de ventas</p>
             </div>
-            <div>
-                <a href="{{ url_for('registrar_gasto') }}" class="btn-add">+ Registrar Gasto</a>
+            <div class="btn-bar">
+                <a href="{{ url_for('reportes_contable') }}" class="btn-reportes">📊 Reportes</a>
+                <a href="{{ url_for('registrar_gasto') }}" class="btn-gasto">+ Gasto</a>
                 {% if current_user.rol == 'admin' %}
-                <a href="{{ url_for('admin_panel') }}" class="btn-small" style="background:#1a3c6e; color:white; padding:8px 14px; border-radius:6px; text-decoration:none; margin-left:8px;">Administración</a>
+                <a href="{{ url_for('admin_panel') }}" class="btn-admin">Admin</a>
                 {% endif %}
-                <a href="{{ url_for('logout') }}" class="btn-small" style="background:#dc3545; color:white; padding:8px 14px; border-radius:6px; text-decoration:none; margin-left:8px;">Salir</a>
+                <a href="{{ url_for('logout') }}" class="btn-salir">Salir</a>
             </div>
         </div>
 
@@ -68,12 +76,19 @@
             </div>
         </div>
 
+        <div class="section">
+            <h2>Productos más vendidos (frecuencia)</h2>
+            <div class="chart-box">
+                <canvas id="chartTop"></canvas>
+            </div>
+        </div>
+
         {% if stock_bajo %}
         <div class="section">
             <h2>⚠️ Productos con Stock Bajo</h2>
             {% for p in stock_bajo %}
             <div class="alert-stock">
-                <strong>{{ p.nombre }}</strong> — Stock actual: {{ p.stock }} (mínimo: {{ p.stock_minimo }})
+                <strong>{{ p.nombre }}</strong> — Stock: {{ p.stock }} (mínimo: {{ p.stock_minimo }})
             </div>
             {% endfor %}
         </div>
@@ -86,6 +101,8 @@
                     <tr>
                         <th>Orden</th>
                         <th>Fecha</th>
+                        <th>Productos</th>
+                        <th>Categoría</th>
                         <th>Total</th>
                         <th>Estado</th>
                     </tr>
@@ -95,11 +112,19 @@
                     <tr>
                         <td>{{ p.numero_orden }}</td>
                         <td>{{ p.fecha }}</td>
+                        <td>{{ p.productos or '-' }}</td>
+                        <td>
+                            {% if p.categorias %}
+                                {% for cat in p.categorias.split(', ') %}
+                                <span class="cat-badge">{{ cat }}</span>
+                                {% endfor %}
+                            {% else %}-{% endif %}
+                        </td>
                         <td>${{ '%.2f'|format(p.total) }}</td>
                         <td>{{ p.estado }}</td>
                     </tr>
                     {% else %}
-                    <tr><td colspan="4">No hay pedidos aún</td></tr>
+                    <tr><td colspan="6">No hay pedidos aún</td></tr>
                     {% endfor %}
                 </tbody>
             </table>
@@ -132,6 +157,29 @@
         </div>
     </div>
 
+    <script>
+        const labels = [{% for t in top_productos %}"{{ t.nombre }}"{% if not loop.last %},{% endif %}{% endfor %}];
+        const data = [{% for t in top_productos %}{{ t.total_vendido }}{% if not loop.last %},{% endif %}{% endfor %}];
+        if (labels.length) {
+            new Chart(document.getElementById('chartTop'), {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Unidades vendidas',
+                        data: data,
+                        backgroundColor: ['#1a3c6e','#c41e3a','#28a745','#fd7e14','#6f42c1','#17a2b8','#ffc107','#e83e8c']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+                }
+            });
+        }
+    </script>
     <script src="/static/js/app.js"></script>
 </body>
 </html>
