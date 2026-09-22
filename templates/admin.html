@@ -14,6 +14,8 @@
 
     <title>Administración - Recarga Veloz</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/membrete.css') }}">
+
     <style>
         .admin-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; flex-wrap: wrap; gap: 10px; }
         .admin-actions a { margin-left: 10px; }
@@ -32,18 +34,50 @@
         .btn-stock { background: #17a2b8; color: white; }
         .stock-form { display: inline-flex; gap: 5px; align-items: center; }
         .stock-form input { width: 60px; padding: 4px; border: 1px solid #ddd; border-radius: 4px; }
+    
+        .inst-header {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 10px 12px 6px;
+            margin-bottom: 6px;
+        }
+        .inst-crest {
+            width: 28px;
+            height: 28px;
+            object-fit: contain;
+        }
+        .inst-name {
+            font-size: 12px;
+            color: #5a6a7a;
+            font-weight: 500;
+            letter-spacing: 0.2px;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="admin-header">
+
+    <div class="membrete" style="display:flex;align-items:center;gap:12px;padding:10px 14px;margin:0 0 16px 0;background:linear-gradient(180deg,#f0f4f8 0%,#ffffff 100%);border:1px solid #d0dbe8;border-left:4px solid #1a3c6e;border-radius:10px;box-shadow:0 2px 6px rgba(26,60,110,0.08);width:100%;box-sizing:border-box;">
+      <img src="{{ url_for('static', filename='icons/escudo.png') }}" alt="Escudo" style="width:56px;height:56px;object-fit:contain;flex-shrink:0;" onerror="this.onerror=null;this.src='{{ url_for('static', filename='icons/escudo.jpg') }}';">
+      <div style="flex:1;min-width:0;line-height:1.35;">
+        <div style="font-size:13px;font-weight:800;color:#1a3c6e;">UNIDAD EDUCATIVA “DR. JOSÉ MARÍA VELASCO IBARRA”</div>
+        <div style="font-size:11px;color:#5a6a7a;margin-top:2px;"><strong>AMIE:</strong> 07H00574 · El Guabo – El Oro – Ecuador</div>
+        <div style="font-size:10px;color:#7a8a9a;margin-top:1px;">Panamericana sur entre vía Pasaje y Florentino Sáenz de Villaverde</div>
+      </div>
+      <div style="font-size:12px;font-weight:800;color:#1a3c6e;letter-spacing:1.5px;border-left:1px solid #d0dbe8;padding-left:10px;flex-shrink:0;">UEJMVI</div>
+    </div>
+
+
+    <div class="admin-header">
             <div>
                 <h1 style="color:#1a3c6e; margin:0;">Panel de Administración</h1>
                 <p style="color:#666; margin:5px 0 0;">Gestión de Productos e Inventario</p>
             </div>
             <div class="admin-actions">
                 <a href="{{ url_for('admin_nuevo_producto') }}" class="btn-add">+ Nuevo Producto</a>
-                <a href="{{ url_for('dashboard_contable') }}" class="btn-small btn-edit">Dashboard Contable</a>
+                <a href="{{ url_for('dashboard_contable') }}" class="btn-small btn-edit">Panel Contable</a>
                 <a href="{{ url_for('pedidos_bar') }}" class="btn-small btn-edit">Ver Pedidos</a>
                 <a href="{{ url_for('logout') }}" class="btn-small" style="background:#dc3545; color:white;">Salir</a>
             </div>
