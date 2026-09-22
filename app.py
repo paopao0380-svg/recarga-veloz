@@ -462,9 +462,9 @@ def dashboard_contable():
     
     # Últimos pedidos CON productos y categorías
     ultimos_pedidos = conn.execute("""
-        SELECT p.*,
+        SELECT p.id, p.numero_orden, p.fecha, p.estado, p.total,
                GROUP_CONCAT(pr.nombre || ' x' || d.cantidad, ', ') as productos,
-               GROUP_CONCAT(DISTINCT c.nombre, ', ') as categorias
+               GROUP_CONCAT(c.nombre, ', ') as categorias
         FROM pedidos p
         LEFT JOIN detalle_pedidos d ON p.id = d.pedido_id
         LEFT JOIN productos pr ON d.producto_id = pr.id
@@ -563,7 +563,7 @@ def reportes_contable():
     pedidos = conn.execute("""
         SELECT p.*,
                GROUP_CONCAT(pr.nombre || ' x' || d.cantidad, ', ') as productos,
-               GROUP_CONCAT(DISTINCT c.nombre, ', ') as categorias
+               GROUP_CONCAT(c.nombre, ', ') as categorias
         FROM pedidos p
         LEFT JOIN detalle_pedidos d ON p.id = d.pedido_id
         LEFT JOIN productos pr ON d.producto_id = pr.id
@@ -660,7 +660,7 @@ def reportes_excel():
     for p in conn.execute("""
         SELECT p.numero_orden, p.fecha, p.total, p.estado,
                GROUP_CONCAT(pr.nombre || ' x' || d.cantidad, ', '),
-               GROUP_CONCAT(DISTINCT c.nombre, ', ')
+               GROUP_CONCAT(c.nombre, ', ')
         FROM pedidos p
         LEFT JOIN detalle_pedidos d ON p.id = d.pedido_id
         LEFT JOIN productos pr ON d.producto_id = pr.id
