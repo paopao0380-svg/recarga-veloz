@@ -6,6 +6,8 @@
     <meta name="theme-color" content="#1a3c6e">
     <title>Reportes - Recarga Veloz</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/membrete.css') }}">
+
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <style>
         .filters {
@@ -46,17 +48,49 @@
             .no-print { display: none !important; }
             .section { box-shadow: none; border: 1px solid #ddd; }
         }
+    
+        .inst-header {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 10px 12px 6px;
+            margin-bottom: 6px;
+        }
+        .inst-crest {
+            width: 28px;
+            height: 28px;
+            object-fit: contain;
+        }
+        .inst-name {
+            font-size: 12px;
+            color: #5a6a7a;
+            font-weight: 500;
+            letter-spacing: 0.2px;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="dashboard-header no-print" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:10px;">
+
+    <div class="membrete" style="display:flex;align-items:center;gap:12px;padding:10px 14px;margin:0 0 16px 0;background:linear-gradient(180deg,#f0f4f8 0%,#ffffff 100%);border:1px solid #d0dbe8;border-left:4px solid #1a3c6e;border-radius:10px;box-shadow:0 2px 6px rgba(26,60,110,0.08);width:100%;box-sizing:border-box;">
+      <img src="{{ url_for('static', filename='icons/escudo.png') }}" alt="Escudo" style="width:56px;height:56px;object-fit:contain;flex-shrink:0;" onerror="this.onerror=null;this.src='{{ url_for('static', filename='icons/escudo.jpg') }}';">
+      <div style="flex:1;min-width:0;line-height:1.35;">
+        <div style="font-size:13px;font-weight:800;color:#1a3c6e;">UNIDAD EDUCATIVA “DR. JOSÉ MARÍA VELASCO IBARRA”</div>
+        <div style="font-size:11px;color:#5a6a7a;margin-top:2px;"><strong>AMIE:</strong> 07H00574 · El Guabo – El Oro – Ecuador</div>
+        <div style="font-size:10px;color:#7a8a9a;margin-top:1px;">Panamericana sur entre vía Pasaje y Florentino Sáenz de Villaverde</div>
+      </div>
+      <div style="font-size:12px;font-weight:800;color:#1a3c6e;letter-spacing:1.5px;border-left:1px solid #d0dbe8;padding-left:10px;flex-shrink:0;">UEJMVI</div>
+    </div>
+
+
+    <div class="dashboard-header no-print" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:10px;">
             <div>
                 <h1 style="color:#1a3c6e;margin:0;">Reportes Ingresos / Egresos</h1>
                 <p style="color:#666;margin:4px 0 0;">Proyección de ventas y gastos</p>
             </div>
             <div>
-                <a href="{{ url_for('dashboard_contable') }}" style="color:#1a3c6e;font-weight:600;text-decoration:none;">← Dashboard</a>
+                <a href="{{ url_for('dashboard_contable') }}" style="color:#1a3c6e;font-weight:600;text-decoration:none;">← Panel</a>
             </div>
         </div>
 
@@ -104,6 +138,13 @@
             </div>
         </div>
 
+
+        <div class="section">
+            <h2>Comparativo Ingresos vs Egresos</h2>
+            <div class="chart-box" style="height:240px;">
+                <canvas id="chartIngresosEgresos"></canvas>
+            </div>
+        </div>
         <div class="section">
             <h2>Productos más vendidos</h2>
             <div class="chart-box">
@@ -194,7 +235,7 @@
                     datasets: [{
                         label: 'Unidades vendidas',
                         data: topData,
-                        backgroundColor: '#1a3c6e'
+                        backgroundColor: 'rgba(26, 60, 110, 0.8)', borderRadius: 6
                     }]
                 },
                 options: {
@@ -212,12 +253,48 @@
                     labels: catLabels,
                     datasets: [{
                         data: catData,
-                        backgroundColor: ['#1a3c6e', '#c41e3a', '#28a745', '#fd7e14', '#6f42c1']
+                        backgroundColor: ['#1a3c6e', '#c41e3a', '#28a745', '#fd7e14', '#6f42c1'],
+                        borderWidth: 0
                     }]
                 },
-                options: { responsive: true, maintainAspectRatio: false }
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 12 } } } }
+                }
             });
         }
+
+        // Comparativo Ingresos vs Egresos
+        new Chart(document.getElementById('chartIngresosEgresos'), {
+            type: 'bar',
+            data: {
+                labels: ['Ingresos', 'Egresos', 'Utilidad'],
+                datasets: [{
+                    data: [{{ ingresos.total }}, {{ egresos.total }}, {{ utilidad }}],
+                    backgroundColor: ['rgba(40, 167, 69, 0.75)', 'rgba(220, 53, 69, 0.75)', 'rgba(26, 60, 110, 0.75)'],
+                    borderRadius: 8,
+                    borderSkipped: false,
+                    barPercentage: 0.5
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: 'rgba(0,0,0,0.05)' },
+                        ticks: { font: { size: 11 } }
+                    },
+                    x: {
+                        grid: { display: false },
+                        ticks: { font: { size: 12, weight: '600' } }
+                    }
+                }
+            }
+        });
     </script>
 </body>
 </html>
