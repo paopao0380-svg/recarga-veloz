@@ -6,18 +6,60 @@
     <meta name="theme-color" content="#1a3c6e">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Recarga Veloz">
     <link rel="manifest" href="/static/manifest.json">
     <link rel="apple-touch-icon" href="/static/icons/icon-192.png">
-    <link rel="icon" type="image/png" sizes="192x192" href="/static/icons/icon-192.png">
-
     <title>Recarga Veloz</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            padding-top: 12px;
+        }
+        .crest {
+            width: 90px;
+            height: auto;
+            max-height: 110px;
+            object-fit: contain;
+            margin: 0 auto 10px;
+            display: block;
+            filter: drop-shadow(0 2px 6px rgba(0,0,0,0.15));
+        }
+        .school-name {
+            color: #1a3c6e;
+            font-size: 14px;
+            font-weight: 600;
+            letter-spacing: 0.2px;
+            margin: 0 0 8px;
+        }
+        .title {
+            color: #1a3c6e;
+            font-size: 38px;
+            font-weight: 800;
+            margin: 4px 0;
+            letter-spacing: 1px;
+        }
+        .slogan {
+            color: #c41e3a;
+            font-size: 17px;
+            font-style: italic;
+            margin-bottom: 10px;
+        }
+        @media (max-width: 480px) {
+            .crest { width: 72px; }
+            .title { font-size: 30px; }
+            .school-name { font-size: 12px; }
+        }
+    </style>
 </head>
 <body>
     <div class="container">
         <header class="header">
+            <img class="crest"
+                 src="{{ url_for('static', filename='icons/escudo.png') }}"
+                 alt="Escudo U.E. Dr. José María Velasco Ibarra"
+                 onerror="this.src='{{ url_for('static', filename='icons/escudo.jpg') }}'">
             <h2 class="school-name">Unidad Educativa Dr. José María Velasco Ibarra</h2>
             <h1 class="title">RECARGA VELOZ</h1>
             <p class="slogan">Tu punto saludable</p>
@@ -32,12 +74,10 @@
                 <img src="https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=500&h=350&fit=crop" alt="Sólidos">
                 <div class="category-title solidos">SÓLIDOS</div>
             </a>
-
             <a href="{{ url_for('categoria', nombre='Bebidas') }}" class="category-card">
                 <img src="https://images.unsplash.com/photo-1622597467836-f3285f2131b8?w=500&h=350&fit=crop" alt="Bebidas">
                 <div class="category-title bebidas">BEBIDAS</div>
             </a>
-
             <a href="{{ url_for('categoria', nombre='Postres') }}" class="category-card">
                 <img src="https://images.unsplash.com/photo-1488477181946-6428a0291777?w=500&h=350&fit=crop" alt="Postres">
                 <div class="category-title postres">POSTRES</div>
@@ -49,7 +89,6 @@
             <a href="{{ url_for('login') }}">🔐 Personal</a>
         </div>
     </div>
-
     <script src="/static/js/app.js"></script>
 </body>
 </html>
