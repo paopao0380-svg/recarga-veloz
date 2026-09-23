@@ -28,14 +28,21 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            width: 120px;
+            width: 130px;
+            overflow: visible;
         }
-        .top-izq img,
-        .top-der img {
-            width: 110px;
-            height: 110px;
+        .top-izq img {
+            width: 100px;
+            height: auto;
+            max-height: none;
             object-fit: contain;
-            object-position: center;
+            display: block;
+        }
+        .top-der img {
+            width: 120px;
+            height: auto;
+            max-height: none;
+            object-fit: contain;
             display: block;
         }
         .top-sigla {
@@ -48,10 +55,11 @@
         }
         .top-barra {
             width: 3px;
-            height: 100px;
+            align-self: stretch;
+            min-height: 90px;
             background: #1a3c6e;
             flex-shrink: 0;
-            margin: 0 14px;
+            margin: 0 12px;
             border-radius: 2px;
         }
         .top-centro {
@@ -121,17 +129,14 @@
             .top-izq, .top-der {
                 width: 72px;
             }
-            .top-izq img,
-            .top-der img {
-                width: 64px;
-                height: 64px;
-            }
+            .top-izq img { width: 58px; height: auto; }
+            .top-der img { width: 70px; height: auto; }
             .top-sigla {
                 font-size: 11px;
                 letter-spacing: 1px;
             }
             .top-barra {
-                height: 70px;
+                min-height: 60px;
                 margin: 0 6px;
                 width: 2px;
             }
