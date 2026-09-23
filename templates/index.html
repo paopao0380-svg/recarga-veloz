@@ -12,131 +12,145 @@
     <title>Recarga Veloz</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <style>
-        /* Encabezado institucional como texto normal (sin tarjeta) */
-        .encabezado-inst {
-            display: flex;
+        .top-institucional {
+            display: grid;
+            grid-template-columns: 110px 1fr 120px;
             align-items: center;
-            justify-content: center;
-            gap: 0;
-            margin: 8px auto 20px auto;
-            max-width: 560px;
-            width: 100%;
-            padding: 0 8px;
-            box-sizing: border-box;
-            background: transparent;
-            border: none;
-            box-shadow: none;
+            gap: 12px;
+            max-width: 900px;
+            margin: 6px auto 8px auto;
+            padding: 4px 8px;
         }
-        .enc-izq {
+        .top-izq, .top-der {
             display: flex;
             flex-direction: column;
             align-items: center;
-            flex-shrink: 0;
-            padding-right: 14px;
+            justify-content: center;
         }
-        .enc-izq img {
-            height: 70px;
+        .top-izq img {
+            height: 95px;
             width: auto;
-            max-width: 62px;
+            max-width: 100px;
             object-fit: contain;
         }
-        .enc-sigla {
-            margin-top: 3px;
-            font-size: 13px;
-            font-weight: 800;
+        .top-der img {
+            height: 100px;
+            width: auto;
+            max-width: 110px;
+            object-fit: contain;
+        }
+        .top-sigla {
+            margin-top: 2px;
+            font-size: 15px;
+            font-weight: 900;
+            color: #1a3c6e;
+            letter-spacing: 2px;
+        }
+        .top-centro {
+            text-align: center;
+            border-left: 3px solid #1a3c6e;
+            border-right: 3px solid #1a3c6e;
+            padding: 4px 16px;
+            line-height: 1.25;
+        }
+        .top-centro .l1 {
+            font-size: 14px;
+            font-weight: 700;
             color: #1a3c6e;
             letter-spacing: 1.5px;
         }
-        .enc-barra {
-            width: 2px;
-            align-self: stretch;
-            min-height: 70px;
-            background: #1a3c6e;
-            margin-right: 14px;
-            flex-shrink: 0;
-        }
-        .enc-texto {
-            text-align: center;
-            line-height: 1.3;
-        }
-        .enc-texto .l1 {
-            font-size: 12px;
-            font-weight: 600;
-            color: #1a3c6e;
-            letter-spacing: 1px;
-        }
-        .enc-texto .l2 {
-            font-size: 16px;
-            font-weight: 700;
+        .top-centro .l2 {
+            font-size: 20px;
+            font-weight: 800;
             color: #1a3c6e;
             margin-top: 2px;
         }
-        .enc-texto .l3 {
-            font-size: 12px;
-            color: #5a6a7a;
+        .top-centro .l3 {
+            font-size: 13px;
+            color: #4a5a6a;
             margin-top: 4px;
-            font-weight: 400;
         }
-        .enc-texto .l4 {
+        .top-centro .l4 {
+            font-size: 13px;
+            color: #4a5a6a;
+            margin-top: 1px;
+        }
+        .top-centro .l5 {
             font-size: 12px;
-            color: #5a6a7a;
+            color: #6a7a8a;
             margin-top: 1px;
-            font-weight: 400;
         }
-        .enc-texto .l5 {
-            font-size: 11px;
-            color: #7a8a9a;
-            margin-top: 1px;
-            font-weight: 400;
+        .ornamento {
+            text-align: center;
+            color: #1a3c6e;
+            font-size: 18px;
+            letter-spacing: 2px;
+            margin: 6px 0 10px;
+            opacity: 0.85;
         }
         .header {
             text-align: center;
-            margin-bottom: 18px;
+            margin-bottom: 14px;
         }
         .title {
             color: #1a3c6e;
-            font-size: 36px;
+            font-size: 38px;
             font-weight: 800;
             margin: 0;
             letter-spacing: 1px;
         }
         .slogan {
             color: #c41e3a;
-            font-size: 16px;
+            font-size: 17px;
             font-style: italic;
             margin: 6px 0 0;
         }
-        @media (max-width: 520px) {
-            .enc-izq img { height: 54px; max-width: 48px; }
-            .enc-sigla { font-size: 11px; }
-            .enc-texto .l1 { font-size: 11px; }
-            .enc-texto .l2 { font-size: 13px; }
-            .enc-texto .l3, .enc-texto .l4 { font-size: 11px; }
-            .enc-texto .l5 { font-size: 10px; }
+        @media (max-width: 700px) {
+            .top-institucional {
+                grid-template-columns: 70px 1fr 75px;
+                gap: 6px;
+                max-width: 100%;
+            }
+            .top-izq img { height: 60px; max-width: 65px; }
+            .top-der img { height: 62px; max-width: 70px; }
+            .top-sigla { font-size: 11px; letter-spacing: 1px; }
+            .top-centro { padding: 2px 8px; border-left-width: 2px; border-right-width: 2px; }
+            .top-centro .l1 { font-size: 10px; letter-spacing: 0.5px; }
+            .top-centro .l2 { font-size: 13px; }
+            .top-centro .l3, .top-centro .l4 { font-size: 10px; }
+            .top-centro .l5 { font-size: 9px; }
             .title { font-size: 28px; }
+            .ornamento { font-size: 14px; }
         }
     </style>
 </head>
 <body>
     <div class="container">
 
-        <!-- Texto institucional normal (solo pantalla principal) -->
-        <div class="encabezado-inst">
-            <div class="enc-izq">
+        <div class="top-institucional">
+            <div class="top-izq">
                 <img src="{{ url_for('static', filename='icons/escudo.png') }}"
                      alt="Escudo"
-                     onerror="this.onerror=null;this.src='{{ url_for('static', filename='icons/escudo.jpg') }}';">
-                <div class="enc-sigla">UEJMVI</div>
+                     onerror="this.src='{{ url_for('static', filename='icons/escudo.jpg') }}'">
+                <div class="top-sigla">UEJMVI</div>
             </div>
-            <div class="enc-barra"></div>
-            <div class="enc-texto">
+
+            <div class="top-centro">
                 <div class="l1">UNIDAD EDUCATIVA</div>
                 <div class="l2">DR. JOSÉ MARÍA VELASCO IBARRA</div>
                 <div class="l3">El Guabo – El Oro – Ecuador</div>
                 <div class="l4"><strong>AMIE:</strong> 07H00574</div>
                 <div class="l5">Dir.: Panamericana sur entre vía Pasaje y Florentino Sáenz de Villaverde</div>
             </div>
+
+            <div class="top-der">
+                <img src="{{ url_for('static', filename='icons/logo_bachillerato.png') }}"
+                     alt="Bachillerato Técnico"
+                     onerror="this.style.display='none'">
+            </div>
         </div>
+
+        <div class="ornamento">✦ —— ❦ —— ✦</div>
 
         <header class="header">
             <h1 class="title">RECARGA VELOZ</h1>
