@@ -14,12 +14,12 @@
     <style>
         .top-institucional {
             display: grid;
-            grid-template-columns: 110px 1fr 120px;
+            grid-template-columns: 120px 1fr 130px;
             align-items: center;
-            gap: 12px;
-            max-width: 900px;
-            margin: 6px auto 8px auto;
-            padding: 4px 8px;
+            gap: 8px;
+            max-width: 920px;
+            margin: 4px auto 4px auto;
+            padding: 2px 6px;
         }
         .top-izq, .top-der {
             display: flex;
@@ -28,47 +28,46 @@
             justify-content: center;
         }
         .top-izq img {
-            height: 95px;
-            width: auto;
-            max-width: 100px;
+            width: 100%;
+            max-width: 110px;
+            height: auto;
             object-fit: contain;
+            display: block;
         }
         .top-der img {
-            height: 100px;
-            width: auto;
-            max-width: 110px;
+            width: 100%;
+            max-width: 125px;
+            height: auto;
             object-fit: contain;
+            display: block;
         }
+        /* UEJMVI is part of the left image crop; if separate needed: */
         .top-sigla {
-            margin-top: 2px;
-            font-size: 15px;
-            font-weight: 900;
-            color: #1a3c6e;
-            letter-spacing: 2px;
+            display: none;
         }
         .top-centro {
             text-align: center;
             border-left: 3px solid #1a3c6e;
             border-right: 3px solid #1a3c6e;
-            padding: 4px 16px;
-            line-height: 1.25;
+            padding: 2px 12px;
+            line-height: 1.22;
         }
         .top-centro .l1 {
             font-size: 14px;
             font-weight: 700;
             color: #1a3c6e;
-            letter-spacing: 1.5px;
+            letter-spacing: 1.2px;
         }
         .top-centro .l2 {
             font-size: 20px;
             font-weight: 800;
             color: #1a3c6e;
-            margin-top: 2px;
+            margin-top: 1px;
         }
         .top-centro .l3 {
             font-size: 13px;
             color: #4a5a6a;
-            margin-top: 4px;
+            margin-top: 3px;
         }
         .top-centro .l4 {
             font-size: 13px;
@@ -83,14 +82,14 @@
         .ornamento {
             text-align: center;
             color: #1a3c6e;
-            font-size: 18px;
-            letter-spacing: 2px;
-            margin: 6px 0 10px;
-            opacity: 0.85;
+            font-size: 16px;
+            margin: 4px 0 8px;
+            opacity: 0.9;
+            letter-spacing: 1px;
         }
         .header {
             text-align: center;
-            margin-bottom: 14px;
+            margin-bottom: 12px;
         }
         .title {
             color: #1a3c6e;
@@ -107,20 +106,17 @@
         }
         @media (max-width: 700px) {
             .top-institucional {
-                grid-template-columns: 70px 1fr 75px;
-                gap: 6px;
-                max-width: 100%;
+                grid-template-columns: 72px 1fr 80px;
+                gap: 4px;
             }
-            .top-izq img { height: 60px; max-width: 65px; }
-            .top-der img { height: 62px; max-width: 70px; }
-            .top-sigla { font-size: 11px; letter-spacing: 1px; }
-            .top-centro { padding: 2px 8px; border-left-width: 2px; border-right-width: 2px; }
-            .top-centro .l1 { font-size: 10px; letter-spacing: 0.5px; }
-            .top-centro .l2 { font-size: 13px; }
+            .top-izq img { max-width: 68px; }
+            .top-der img { max-width: 76px; }
+            .top-centro { padding: 1px 6px; border-width: 2px; }
+            .top-centro .l1 { font-size: 10px; letter-spacing: 0.4px; }
+            .top-centro .l2 { font-size: 12px; }
             .top-centro .l3, .top-centro .l4 { font-size: 10px; }
             .top-centro .l5 { font-size: 9px; }
             .title { font-size: 28px; }
-            .ornamento { font-size: 14px; }
         }
     </style>
 </head>
@@ -129,10 +125,9 @@
 
         <div class="top-institucional">
             <div class="top-izq">
-                <img src="{{ url_for('static', filename='icons/escudo.png') }}"
-                     alt="Escudo"
-                     onerror="this.src='{{ url_for('static', filename='icons/escudo.jpg') }}'">
-                <div class="top-sigla">UEJMVI</div>
+                <img src="{{ url_for('static', filename='icons/escudo_ui.png') }}"
+                     alt="Escudo UEJMVI"
+                     onerror="this.src='{{ url_for('static', filename='icons/escudo.png') }}'">
             </div>
 
             <div class="top-centro">
@@ -145,12 +140,11 @@
 
             <div class="top-der">
                 <img src="{{ url_for('static', filename='icons/logo_bachillerato.png') }}"
-                     alt="Bachillerato Técnico"
-                     onerror="this.style.display='none'">
+                     alt="Bachillerato Técnico">
             </div>
         </div>
 
-        <div class="ornamento">✦ —— ❦ —— ✦</div>
+        <div class="ornamento">✦ ——— ❦ ——— ✦</div>
 
         <header class="header">
             <h1 class="title">RECARGA VELOZ</h1>
