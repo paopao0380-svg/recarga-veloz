@@ -54,10 +54,14 @@
         .top-centro .l5 { font-size: 11px; color: #7a8a9a; margin-top: 2px; }
         .ornamento {
             text-align: center;
-            color: #1a3c6e;
-            font-size: 14px;
-            margin: 8px 0 12px;
-            letter-spacing: 3px;
+            margin: 10px auto 14px;
+            line-height: 0;
+        }
+        .ornamento img {
+            width: min(420px, 85%);
+            height: auto;
+            display: inline-block;
+            opacity: 0.9;
         }
         .header { text-align: center; margin-bottom: 14px; }
         .title {
@@ -117,7 +121,9 @@
             </div>
         </div>
 
-        <div class="ornamento">✦ ——— ❦ ——— ✦</div>
+        <div class="ornamento">
+            <img src="{{ url_for('static', filename='icons/separador.png') }}" alt="">
+        </div>
 
         <header class="header">
             <h1 class="title">RECARGA VELOZ</h1>
