@@ -14,83 +14,62 @@
     <style>
         .top-institucional {
             display: grid;
-            grid-template-columns: 120px 1fr 130px;
+            grid-template-columns: 120px minmax(0, 1fr) 130px;
             align-items: center;
-            gap: 8px;
-            max-width: 920px;
-            margin: 4px auto 4px auto;
-            padding: 2px 6px;
+            column-gap: 10px;
+            max-width: 900px;
+            margin: 8px auto 6px;
+            padding: 0 8px;
         }
         .top-izq, .top-der {
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
+            text-align: center;
         }
         .top-izq img {
-            width: 100%;
-            max-width: 110px;
+            width: 88px;
             height: auto;
             object-fit: contain;
             display: block;
+        }
+        .top-sigla {
+            margin-top: 4px;
+            font-size: 16px;
+            font-weight: 900;
+            color: #1a3c6e;
+            letter-spacing: 2px;
+            line-height: 1;
         }
         .top-der img {
-            width: 100%;
-            max-width: 125px;
+            width: 118px;
             height: auto;
+            max-height: none;
             object-fit: contain;
+            object-position: center;
             display: block;
-        }
-        /* UEJMVI is part of the left image crop; if separate needed: */
-        .top-sigla {
-            display: none;
         }
         .top-centro {
             text-align: center;
             border-left: 3px solid #1a3c6e;
             border-right: 3px solid #1a3c6e;
-            padding: 2px 12px;
-            line-height: 1.22;
+            padding: 4px 14px;
+            line-height: 1.25;
         }
-        .top-centro .l1 {
-            font-size: 14px;
-            font-weight: 700;
-            color: #1a3c6e;
-            letter-spacing: 1.2px;
-        }
-        .top-centro .l2 {
-            font-size: 20px;
-            font-weight: 800;
-            color: #1a3c6e;
-            margin-top: 1px;
-        }
-        .top-centro .l3 {
-            font-size: 13px;
-            color: #4a5a6a;
-            margin-top: 3px;
-        }
-        .top-centro .l4 {
-            font-size: 13px;
-            color: #4a5a6a;
-            margin-top: 1px;
-        }
-        .top-centro .l5 {
-            font-size: 12px;
-            color: #6a7a8a;
-            margin-top: 1px;
-        }
+        .top-centro .l1 { font-size: 13px; font-weight: 700; color: #1a3c6e; letter-spacing: 1.2px; }
+        .top-centro .l2 { font-size: 19px; font-weight: 800; color: #1a3c6e; margin-top: 2px; }
+        .top-centro .l3 { font-size: 13px; color: #4a5a6a; margin-top: 4px; }
+        .top-centro .l4 { font-size: 13px; color: #4a5a6a; margin-top: 1px; }
+        .top-centro .l5 { font-size: 12px; color: #6a7a8a; margin-top: 1px; }
         .ornamento {
             text-align: center;
             color: #1a3c6e;
-            font-size: 16px;
-            margin: 4px 0 8px;
-            opacity: 0.9;
-            letter-spacing: 1px;
+            font-size: 15px;
+            margin: 6px 0 10px;
+            letter-spacing: 2px;
         }
-        .header {
-            text-align: center;
-            margin-bottom: 12px;
-        }
+        .header { text-align: center; margin-bottom: 12px; }
         .title {
             color: #1a3c6e;
             font-size: 38px;
@@ -105,14 +84,12 @@
             margin: 6px 0 0;
         }
         @media (max-width: 700px) {
-            .top-institucional {
-                grid-template-columns: 72px 1fr 80px;
-                gap: 4px;
-            }
-            .top-izq img { max-width: 68px; }
-            .top-der img { max-width: 76px; }
-            .top-centro { padding: 1px 6px; border-width: 2px; }
-            .top-centro .l1 { font-size: 10px; letter-spacing: 0.4px; }
+            .top-institucional { grid-template-columns: 72px 1fr 78px; column-gap: 4px; }
+            .top-izq img { width: 56px; }
+            .top-der img { width: 70px; }
+            .top-sigla { font-size: 11px; letter-spacing: 1px; }
+            .top-centro { padding: 2px 6px; }
+            .top-centro .l1 { font-size: 10px; }
             .top-centro .l2 { font-size: 12px; }
             .top-centro .l3, .top-centro .l4 { font-size: 10px; }
             .top-centro .l5 { font-size: 9px; }
@@ -122,14 +99,11 @@
 </head>
 <body>
     <div class="container">
-
         <div class="top-institucional">
             <div class="top-izq">
-                <img src="{{ url_for('static', filename='icons/escudo_ui.png') }}"
-                     alt="Escudo UEJMVI"
-                     onerror="this.src='{{ url_for('static', filename='icons/escudo.png') }}'">
+                <img src="{{ url_for('static', filename='icons/escudo.png') }}" alt="Escudo">
+                <div class="top-sigla">UEJMVI</div>
             </div>
-
             <div class="top-centro">
                 <div class="l1">UNIDAD EDUCATIVA</div>
                 <div class="l2">DR. JOSÉ MARÍA VELASCO IBARRA</div>
@@ -137,10 +111,8 @@
                 <div class="l4"><strong>AMIE:</strong> 07H00574</div>
                 <div class="l5">Dir.: Panamericana sur entre vía Pasaje y Florentino Sáenz de Villaverde</div>
             </div>
-
             <div class="top-der">
-                <img src="{{ url_for('static', filename='icons/logo_bachillerato.png') }}"
-                     alt="Bachillerato Técnico">
+                <img src="{{ url_for('static', filename='icons/logo_bachillerato.png') }}" alt="Bachillerato Técnico">
             </div>
         </div>
 
