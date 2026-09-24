@@ -93,18 +93,21 @@
         .title {
             font-family: "Playfair Display", Georgia, "Times New Roman", serif !important;
             color: #1a3c6e !important;
-            font-size: 72px !important;
+            font-size: 36px !important;
             font-weight: 800 !important;
             margin: 0 !important;
-            line-height: 1.05 !important;
-            letter-spacing: 2px !important;
+            line-height: 1.1 !important;
+            letter-spacing: 1.5px !important;
             text-transform: uppercase !important;
         }
-        @media (min-width: 900px) {
-            .title { font-size: 96px !important; }
+        @media (min-width: 768px) {
+            .title { font-size: 44px !important; }
         }
-        @media (max-width: 600px) {
-            .title { font-size: 40px !important; }
+        @media (min-width: 1100px) {
+            .title { font-size: 52px !important; }
+        }
+        @media (max-width: 480px) {
+            .title { font-size: 28px !important; letter-spacing: 1px !important; }
         }
         .slogan {
             font-family: "Cormorant Garamond", Georgia, serif;
@@ -216,7 +219,7 @@
         </div>
 
         <header class="header">
-            <h1 class="title" style="font-family:'Playfair Display',Georgia,serif;font-size:72px;font-weight:800;color:#1a3c6e;letter-spacing:2px;line-height:1.05;margin:0;text-transform:uppercase;">RECARGA VELOZ</h1>
+            <h1 class="title" style="font-family:'Playfair Display',Georgia,serif;font-size:clamp(28px,6vw,52px);font-weight:800;color:#1a3c6e;letter-spacing:1.5px;line-height:1.1;margin:0;text-transform:uppercase;">RECARGA VELOZ</h1>
             <p class="slogan">Tu punto saludable</p>
         </header>
 
