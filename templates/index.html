@@ -10,6 +10,9 @@
     <link rel="manifest" href="/static/manifest.json">
     <link rel="apple-touch-icon" href="/static/icons/icon-192.png">
     <title>Recarga Veloz</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500;1,600&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <style>
         html, body {
@@ -88,24 +91,30 @@
             flex-shrink: 0;
         }
         .title {
+            font-family: "Playfair Display", Georgia, "Times New Roman", serif;
             color: #1a3c6e;
-            font-size: clamp(38px, 6.5vw, 52px);
+            font-size: clamp(42px, 7.5vw, 64px);
             font-weight: 800;
             margin: 0;
             line-height: 1.05;
-            letter-spacing: 1.5px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
         }
         .slogan {
+            font-family: "Cormorant Garamond", Georgia, serif;
             color: #c41e3a;
-            font-size: clamp(18px, 2.6vw, 24px);
+            font-size: clamp(18px, 2.8vw, 26px);
             font-style: italic;
-            margin: 6px 0 0;
+            font-weight: 500;
+            margin: 8px 0 0;
+            letter-spacing: 0.5px;
         }
 
         .instruction {
+            font-family: "Source Sans 3", "Segoe UI", Arial, sans-serif;
             padding: 12px 28px !important;
             margin: 14px auto 18px !important;
-            font-size: clamp(16px, 2.2vw, 20px) !important;
+            font-size: clamp(15px, 2vw, 18px) !important;
             flex-shrink: 0;
         }
 
