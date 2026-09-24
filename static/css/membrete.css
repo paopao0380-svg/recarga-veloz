@@ -1,0 +1,40 @@
+
+/* Membrete tipo barra (Personal y resto de ventanas) */
+.membrete-barra {
+    display: flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+    background: linear-gradient(180deg, #f8fbff 0%, #ffffff 100%) !important;
+    border: 1px solid #d0dbe8 !important;
+    border-radius: 12px !important;
+    box-shadow: 0 1px 6px rgba(26, 60, 110, 0.06) !important;
+    padding: 8px 14px !important;
+    margin: 8px auto 16px !important;
+    max-width: 920px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+}
+.membrete-barra .escudo {
+    width: 52px !important;
+    height: auto !important;
+    object-fit: contain !important;
+    flex-shrink: 0 !important;
+}
+.membrete-barra .info { flex: 1; min-width: 0; line-height: 1.15; }
+.membrete-barra .info .l1 { font-size: 11px; font-weight: 700; color: #1a3c6e; margin: 0; }
+.membrete-barra .info .l2 { font-size: 13px; font-weight: 800; color: #1a3c6e; margin: 0; }
+.membrete-barra .info .l3 { font-size: 10px; color: #5a6a7a; margin: 1px 0 0; }
+.membrete-barra .info .l4 { font-size: 10px; color: #5a6a7a; margin: 0; }
+.membrete-barra .info .l5 { font-size: 9px; color: #7a8a9a; margin: 0; }
+.membrete-barra .sigla-wrap {
+    display: flex; align-items: center; flex-shrink: 0;
+    padding-left: 12px; border-left: 2px solid #c5d0e0;
+}
+.membrete-barra .sigla {
+    font-size: 20px; font-weight: 900; color: #1a3c6e;
+    letter-spacing: 1.5px; line-height: 1;
+}
+@media (max-width: 600px) {
+    .membrete-barra .escudo { width: 42px !important; }
+    .membrete-barra .sigla { font-size: 15px; }
+}
