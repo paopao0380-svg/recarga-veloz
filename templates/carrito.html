@@ -8,6 +8,8 @@
     <link rel="apple-touch-icon" href="/static/icons/icon-192.png">
     <title>Carrito - Recarga Veloz</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/membrete.css') }}">
+
     <style>
         .flash-ok {
             background: #d4edda; color: #155724; padding: 12px 16px;
@@ -20,11 +22,104 @@
             display: block; text-align: center; background: #1a3c6e; color: white;
             padding: 14px; border-radius: 30px; text-decoration: none; font-weight: 700;
         }
+    
+        .inst-header {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 10px 12px 6px;
+            margin-bottom: 6px;
+        }
+        .inst-crest {
+            width: 28px;
+            height: 28px;
+            object-fit: contain;
+        }
+        .inst-name {
+            font-size: 12px;
+            color: #5a6a7a;
+            font-weight: 500;
+            letter-spacing: 0.2px;
+        }
     </style>
+
+    <style>
+        .membrete-barra {
+            display: flex !important;
+            align-items: center !important;
+            gap: 12px !important;
+            background: linear-gradient(180deg, #f8fbff 0%, #ffffff 100%) !important;
+            border: 1px solid #d0dbe8 !important;
+            border-left: none !important;
+            border-radius: 12px !important;
+            box-shadow: 0 1px 6px rgba(26, 60, 110, 0.06) !important;
+            padding: 8px 14px !important;
+            margin: 8px auto 16px !important;
+            max-width: 920px !important;
+            width: 100% !important;
+            box-sizing: border-box !important;
+        }
+        .membrete-barra .escudo {
+            width: 52px !important;
+            height: auto !important;
+            max-height: none !important;
+            object-fit: contain !important;
+            flex-shrink: 0 !important;
+        }
+        .membrete-barra .info { flex: 1; min-width: 0; line-height: 1.15; }
+        .membrete-barra .info .l1 { font-size: 11px; font-weight: 700; color: #1a3c6e; margin: 0; }
+        .membrete-barra .info .l2 { font-size: 13px; font-weight: 800; color: #1a3c6e; margin: 0; }
+        .membrete-barra .info .l3 { font-size: 10px; color: #5a6a7a; margin: 1px 0 0; }
+        .membrete-barra .info .l4 { font-size: 10px; color: #5a6a7a; margin: 0; }
+        .membrete-barra .info .l5 { font-size: 9px; color: #7a8a9a; margin: 0; }
+        .membrete-barra .sigla-wrap {
+            display: flex; align-items: center; flex-shrink: 0;
+            padding-left: 12px; border-left: 2px solid #c5d0e0;
+        }
+        .membrete-barra .sigla {
+            font-size: 20px; font-weight: 900; color: #1a3c6e;
+            letter-spacing: 1.5px; line-height: 1;
+        }
+        @media (max-width: 600px) {
+            .membrete-barra .escudo { width: 42px !important; }
+            .membrete-barra .info .l1 { font-size: 10px; }
+            .membrete-barra .info .l2 { font-size: 12px; }
+            .membrete-barra .sigla { font-size: 15px; }
+        }
+    </style>
+
 </head>
 <body>
     <div class="container">
-        <header class="top-bar">
+
+        <div class="membrete-barra">
+            <img class="escudo"
+                 src="{{ url_for('static', filename='icons/escudo.png') }}"
+                 alt="Escudo"
+                 onerror="this.src='{{ url_for('static', filename='icons/escudo.jpg') }}'">
+            <div class="info">
+                <div class="l1">UNIDAD EDUCATIVA</div>
+                <div class="l2">DR. JOSÉ MARÍA VELASCO IBARRA</div>
+                <div class="l3">El Guabo – El Oro – Ecuador</div>
+                <div class="l4"><strong>AMIE:</strong> 07H00574</div>
+                <div class="l5">Panamericana sur entre vía Pasaje y Florentino Sáenz de Villaverde</div>
+            </div>
+            <div class="sigla-wrap">
+                <div class="sigla">UEJMVI</div>
+            </div>
+        </div>
+
+
+        <!-- Membrete institucional -->
+
+
+
+
+
+
+
+    <header class="top-bar">
             <a href="{{ url_for('index') }}" class="back-btn">← Menú</a>
             <h1>Tu Pedido</h1>
             <div></div>
