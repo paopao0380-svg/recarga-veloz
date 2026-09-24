@@ -2,91 +2,244 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
     <meta name="theme-color" content="#1a3c6e">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Recarga Veloz">
     <link rel="manifest" href="/static/manifest.json">
     <link rel="apple-touch-icon" href="/static/icons/icon-192.png">
-    <link rel="icon" type="image/png" sizes="192x192" href="/static/icons/icon-192.png">
-
-    <title>Login - Recarga Veloz</title>
+    <title>Personal - Recarga Veloz</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/membrete.css') }}">
-
-<style>
-        .inst-header {
+    <style>
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background: #f0f4f8;
+        }
+        .page-wrap {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 14px 16px 30px;
+        }
+        /* Membrete tipo barra (como el modelo) */
+        .membrete-barra {
             display: flex;
             align-items: center;
-            justify-content: center;
-            gap: 8px;
-            padding: 10px 12px 6px;
-            margin-bottom: 6px;
+            gap: 14px;
+            background: linear-gradient(180deg, #f8fbff 0%, #ffffff 100%);
+            border: 1px solid #d0dbe8;
+            border-radius: 14px;
+            box-shadow: 0 2px 8px rgba(26, 60, 110, 0.06);
+            padding: 10px 16px;
+            margin: 0 auto 28px;
+            max-width: 920px;
+            box-sizing: border-box;
         }
-        .inst-crest {
-            width: 28px;
-            height: 28px;
+        .membrete-barra .escudo {
+            width: 58px;
+            height: auto;
             object-fit: contain;
+            flex-shrink: 0;
         }
-        .inst-name {
+        .membrete-barra .info {
+            flex: 1;
+            min-width: 0;
+            line-height: 1.25;
+        }
+        .membrete-barra .info .l1 {
             font-size: 12px;
-            color: #5a6a7a;
-            font-weight: 500;
-            letter-spacing: 0.2px;
+            font-weight: 700;
+            color: #1a3c6e;
+            letter-spacing: 0.5px;
+            margin: 0;
         }
-</style>
+        .membrete-barra .info .l2 {
+            font-size: 14px;
+            font-weight: 800;
+            color: #1a3c6e;
+            margin: 0;
+        }
+        .membrete-barra .info .l3 {
+            font-size: 11px;
+            color: #5a6a7a;
+            margin: 2px 0 0;
+        }
+        .membrete-barra .info .l4 {
+            font-size: 11px;
+            color: #5a6a7a;
+            margin: 0;
+        }
+        .membrete-barra .info .l5 {
+            font-size: 10px;
+            color: #7a8a9a;
+            margin: 0;
+        }
+        .membrete-barra .sigla-wrap {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-shrink: 0;
+            padding-left: 12px;
+            border-left: 2px solid #c5d0e0;
+        }
+        .membrete-barra .sigla {
+            font-size: 22px;
+            font-weight: 900;
+            color: #1a3c6e;
+            letter-spacing: 2px;
+            line-height: 1;
+        }
+        .login-wrap {
+            display: flex;
+            justify-content: center;
+        }
+        .login-box {
+            background: white;
+            padding: 28px 30px;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+        .login-box h1 {
+            color: #1a3c6e;
+            font-size: 26px;
+            margin: 0 0 4px;
+        }
+        .login-box > p {
+            color: #666;
+            margin: 0 0 18px;
+            font-size: 14px;
+        }
+        .login-box form { text-align: left; }
+        .login-box label {
+            display: block;
+            font-weight: 600;
+            margin: 12px 0 6px;
+            font-size: 14px;
+            color: #333;
+        }
+        .login-box input {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            font-size: 15px;
+            box-sizing: border-box;
+        }
+        .login-box input:focus {
+            outline: none;
+            border-color: #1a3c6e;
+            box-shadow: 0 0 0 3px rgba(26,60,110,0.12);
+        }
+        .btn-confirm {
+            width: 100%;
+            margin-top: 18px;
+            padding: 14px;
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 30px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .btn-confirm:hover { background: #218838; }
+        .hint {
+            margin-top: 18px;
+            font-size: 13px;
+            color: #666;
+            text-align: center;
+            line-height: 1.6;
+        }
+        .login-box > a {
+            display: block;
+            text-align: center;
+            margin-top: 14px;
+            color: #1a3c6e;
+            font-size: 14px;
+        }
+        .flash {
+            padding: 10px 12px;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            font-size: 14px;
+            text-align: center;
+        }
+        .flash.error { background: #f8d7da; color: #721c24; }
+        .flash.success { background: #d4edda; color: #155724; }
+        @media (max-width: 600px) {
+            .membrete-barra {
+                gap: 10px;
+                padding: 8px 12px;
+            }
+            .membrete-barra .escudo { width: 48px; }
+            .membrete-barra .info .l1 { font-size: 10px; }
+            .membrete-barra .info .l2 { font-size: 12px; }
+            .membrete-barra .info .l3,
+            .membrete-barra .info .l4 { font-size: 10px; }
+            .membrete-barra .info .l5 { font-size: 9px; }
+            .membrete-barra .sigla { font-size: 16px; letter-spacing: 1px; }
+            .login-box { padding: 22px 16px; }
+        }
+    </style>
 </head>
 <body>
-    <div class="container center">
+    <div class="page-wrap">
+        <!-- Membrete superior (modelo solicitado) -->
+        <div class="membrete-barra">
+            <img class="escudo"
+                 src="{{ url_for('static', filename='icons/escudo.png') }}"
+                 alt="Escudo"
+                 onerror="this.src='{{ url_for('static', filename='icons/escudo.jpg') }}'">
+            <div class="info">
+                <div class="l1">UNIDAD EDUCATIVA</div>
+                <div class="l2">DR. JOSÉ MARÍA VELASCO IBARRA</div>
+                <div class="l3">El Guabo – El Oro – Ecuador</div>
+                <div class="l4"><strong>AMIE:</strong> 07H00574</div>
+                <div class="l5">Panamericana sur entre vía Pasaje y Florentino Sáenz de Villaverde</div>
+            </div>
+            <div class="sigla-wrap">
+                <div class="sigla">UEJMVI</div>
+            </div>
+        </div>
 
-    <div class="membrete" style="display:flex;align-items:center;gap:12px;padding:10px 14px;margin:0 0 16px 0;background:linear-gradient(180deg,#f0f4f8 0%,#ffffff 100%);border:1px solid #d0dbe8;border-left:4px solid #1a3c6e;border-radius:10px;box-shadow:0 2px 6px rgba(26,60,110,0.08);width:100%;box-sizing:border-box;">
-      <img src="{{ url_for('static', filename='icons/escudo.png') }}" alt="Escudo" style="width:56px;height:56px;object-fit:contain;flex-shrink:0;" onerror="this.onerror=null;this.src='{{ url_for('static', filename='icons/escudo.jpg') }}';">
-      <div style="flex:1;min-width:0;line-height:1.4;">
-        <div style="font-size:13px;font-weight:800;color:#1a3c6e;">UNIDAD EDUCATIVA “DR. JOSÉ MARÍA VELASCO IBARRA”</div>
-        <div style="font-size:11px;color:#5a6a7a;margin-top:3px;">El Guabo – El Oro – Ecuador</div>
-        <div style="font-size:11px;color:#5a6a7a;margin-top:2px;"><strong>AMIE:</strong> 07H00574</div>
-        <div style="font-size:10px;color:#7a8a9a;margin-top:2px;">Panamericana sur entre vía Pasaje y Florentino Sáenz de Villaverde</div>
-      </div>
-      <div style="font-size:20px;font-weight:900;color:#1a3c6e;letter-spacing:2px;border-left:1px solid #d0dbe8;padding-left:12px;flex-shrink:0;">UEJMVI</div>
-    </div>
+        <div class="login-wrap">
+            <div class="login-box">
+                <h1>Recarga Veloz</h1>
+                <p>Acceso del Personal</p>
 
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="flash {{ category }}">{{ message }}</div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
 
+                <form method="POST">
+                    <label>Usuario</label>
+                    <input type="text" name="usuario" required placeholder="usuario" autocomplete="username">
 
-    <div class="login-box">
-            <h1>Recarga Veloz</h1>
-            <p>Acceso del Personal</p>
+                    <label>Contraseña</label>
+                    <input type="password" name="password" required placeholder="contraseña" autocomplete="current-password">
 
-            {% with messages = get_flashed_messages(with_categories=true) %}
-                {% if messages %}
-                    {% for category, message in messages %}
-                        <div class="flash {{ category }}">{{ message }}</div>
-                    {% endfor %}
-                {% endif %}
-            {% endwith %}
+                    <button type="submit" class="btn-confirm">Ingresar</button>
+                </form>
 
-            <form method="POST">
-                <label>Usuario</label>
-                <input type="text" name="usuario" required placeholder="usuario">
+                <p class="hint">
+                    <strong>Usuarios de prueba:</strong><br><br>
+                    <strong>admin</strong> / admin123 → Administración e Inventario<br>
+                    <strong>cajero</strong> / cajero123 → Pedidos del Bar<br>
+                    <strong>contador</strong> / contador123 → Panel Contable
+                </p>
 
-                <label>Contraseña</label>
-                <input type="password" name="password" required placeholder="contraseña">
-
-                <button type="submit" class="btn-confirm">Ingresar</button>
-            </form>
-
-            <p class="hint">
-                <strong>Usuarios de prueba:</strong><br><br>
-                <strong>admin</strong> / admin123 → Administración e Inventario<br>
-                <strong>cajero</strong> / cajero123 → Pedidos del Bar<br>
-                <strong>contador</strong> / contador123 → Panel Contable
-            </p>
-
-            <a href="{{ url_for('index') }}">← Volver al menú</a>
+                <a href="{{ url_for('index') }}">← Volver al menú</a>
+            </div>
         </div>
     </div>
-
     <script src="/static/js/app.js"></script>
 </body>
 </html>
