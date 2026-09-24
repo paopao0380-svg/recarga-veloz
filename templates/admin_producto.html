@@ -17,17 +17,19 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/membrete.css') }}">
 
     <style>
-        .form-box { background: white; max-width: 520px; margin: 30px auto; padding: 30px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); }
-        .form-box h1 { color: #1a3c6e; margin-bottom: 25px; text-align: center; }
-        .form-group { margin-bottom: 18px; }
-        .form-group label { display: block; margin-bottom: 6px; font-weight: 600; color: #444; }
-        .form-group input, .form-group select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 15px; }
-        .form-actions { display: flex; gap: 10px; margin-top: 25px; }
-        .form-actions button, .form-actions a { flex: 1; text-align: center; padding: 12px; border-radius: 8px; font-weight: 600; text-decoration: none; }
+        .form-box { background: white; max-width: 480px; margin: 8px auto 12px; padding: 16px 20px; border-radius: 14px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); }
+        .form-box h1 { color: #1a3c6e; margin: 0 0 12px; text-align: center; font-size: 22px; }
+        .form-group { margin-bottom: 10px; }
+        .form-group label { display: block; margin-bottom: 3px; font-weight: 600; color: #444; font-size: 13px; }
+        .form-group input, .form-group select { width: 100%; padding: 8px 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; box-sizing: border-box; }
+        .form-actions { display: flex; gap: 10px; margin-top: 14px; }
+        .form-actions button, .form-actions a { flex: 1; text-align: center; padding: 10px; border-radius: 8px; font-weight: 600; text-decoration: none; font-size: 14px; }
         .btn-save { background: #28a745; color: white; border: none; cursor: pointer; }
         .btn-cancel { background: #6c757d; color: white; }
-        .preview { max-width: 150px; max-height: 150px; border-radius: 8px; margin-top: 8px; }
-        .hint { font-size: 13px; color: #777; margin-top: 4px; }
+        .preview { max-width: 90px; max-height: 90px; border-radius: 8px; margin-top: 4px; }
+        .hint { font-size: 11px; color: #777; margin-top: 2px; }
+        .membrete-barra { margin-bottom: 8px !important; padding: 6px 12px !important; }
+        .container { padding-top: 6px !important; padding-bottom: 8px !important; }
     
         .inst-header {
             display: flex;
