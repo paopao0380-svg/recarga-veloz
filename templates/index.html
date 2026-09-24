@@ -12,13 +12,15 @@
     <title>Recarga Veloz</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <style>
+        .container { padding-top: 6px !important; padding-bottom: 8px !important; }
+
         .top-institucional {
             display: flex;
             align-items: center;
             justify-content: center;
-            max-width: 960px;
-            margin: 6px auto 4px;
-            padding: 0 10px;
+            max-width: 900px;
+            margin: 2px auto 2px;
+            padding: 0 8px;
             overflow: visible !important;
         }
         .top-izq, .top-der {
@@ -27,65 +29,119 @@
             overflow: visible !important;
         }
         .top-sigla {
-            margin-top: 2px;
-            font-size: 14px;
+            margin-top: 1px;
+            font-size: 12px;
             font-weight: 900;
             color: #1a3c6e;
-            letter-spacing: 2px;
+            letter-spacing: 1.5px;
             line-height: 1;
         }
         .top-barra {
-            width: 3px;
+            width: 2px;
             align-self: stretch;
-            min-height: 120px;
+            min-height: 70px;
             background: #1a3c6e;
-            margin: 0 14px;
+            margin: 0 10px;
             flex-shrink: 0;
         }
         .top-centro {
             flex: 1 1 auto;
             text-align: center;
-            line-height: 1.15;
+            line-height: 1.05;
             min-width: 0;
         }
-        .top-centro .l1 { font-size: 12px; font-weight: 700; color: #1a3c6e; letter-spacing: 1px; margin: 0; }
-        .top-centro .l2 { font-size: 16px; font-weight: 800; color: #1a3c6e; margin: 0; }
-        .top-centro .l3 { font-size: 11px; color: #5a6a7a; margin: 3px 0 0; }
-        .top-centro .l4 { font-size: 11px; color: #5a6a7a; margin: 0; }
-        .top-centro .l5 { font-size: 10px; color: #7a8a9a; margin: 0; }
+        .top-centro .l1 {
+            font-size: 11px;
+            font-weight: 700;
+            color: #1a3c6e;
+            letter-spacing: 0.8px;
+            margin: 0;
+        }
+        .top-centro .l2 {
+            font-size: 14px;
+            font-weight: 800;
+            color: #1a3c6e;
+            margin: 0;
+        }
+        .top-centro .l3 {
+            font-size: 10px;
+            color: #5a6a7a;
+            margin: 2px 0 0;
+        }
+        .top-centro .l4 {
+            font-size: 10px;
+            color: #5a6a7a;
+            margin: 0;
+        }
+        .top-centro .l5 {
+            font-size: 9px;
+            color: #7a8a9a;
+            margin: 0;
+        }
         .ornamento {
             text-align: center;
-            margin: 4px auto 8px;
+            margin: 2px auto 4px;
             line-height: 0;
         }
         .ornamento img {
-            width: min(420px, 85%);
+            width: min(280px, 70%);
             height: auto;
             display: inline-block;
-            opacity: 0.9;
+            opacity: 0.85;
         }
-        .header { text-align: center; margin-bottom: 10px; margin-top: 2px; }
+        .header {
+            text-align: center;
+            margin: 0 0 6px;
+        }
         .title {
             color: #1a3c6e;
-            font-size: 38px;
+            font-size: 30px;
             font-weight: 800;
             margin: 0;
-            letter-spacing: 1px;
+            letter-spacing: 0.5px;
+            line-height: 1.1;
         }
         .slogan {
             color: #c41e3a;
-            font-size: 17px;
+            font-size: 14px;
             font-style: italic;
-            margin: 6px 0 0;
+            margin: 2px 0 0;
+        }
+        .instruction {
+            padding: 6px 16px !important;
+            margin: 0 auto 10px !important;
+            font-size: 13px;
+        }
+        .categories {
+            gap: 12px !important;
+            margin-bottom: 8px;
+        }
+        .category-card {
+            width: 220px !important;
+        }
+        .category-card img {
+            height: 120px !important;
+        }
+        .category-title {
+            padding: 8px !important;
+            font-size: 15px !important;
+        }
+        .footer-links {
+            margin-top: 6px !important;
+            padding-bottom: 4px;
         }
         @media (max-width: 700px) {
-            .top-barra { margin: 0 6px; min-height: 80px; width: 2px; }
-            .top-centro .l1 { font-size: 10px; }
-            .top-centro .l2 { font-size: 12px; }
-            .top-centro .l3, .top-centro .l4 { font-size: 10px; }
-            .top-centro .l5 { font-size: 9px; }
-            .top-sigla { font-size: 11px; }
-            .title { font-size: 28px; }
+            .top-barra { margin: 0 5px; min-height: 55px; }
+            .top-centro .l1 { font-size: 9px; }
+            .top-centro .l2 { font-size: 11px; }
+            .top-centro .l3, .top-centro .l4 { font-size: 9px; }
+            .top-centro .l5 { font-size: 8px; }
+            .top-sigla { font-size: 10px; }
+            .title { font-size: 24px; }
+            .slogan { font-size: 12px; }
+            .category-card { width: 150px !important; }
+            .category-card img { height: 90px !important; }
+            .ornamento img { width: min(220px, 75%); }
         }
     </style>
 </head>
@@ -94,10 +150,9 @@
 
         <div class="top-institucional">
             <div class="top-izq">
-                <!-- Escudo izquierdo: altura automática, sin recorte -->
                 <img src="{{ url_for('static', filename='icons/escudo.png') }}"
                      alt="Escudo UEJMVI"
-                     style="width:95px;height:auto;max-height:none;object-fit:contain;display:block;margin:0 auto;"
+                     style="width:72px;height:auto;max-height:none;object-fit:contain;display:block;margin:0 auto;"
                      onerror="this.src='{{ url_for('static', filename='icons/escudo.jpg') }}'">
                 <div class="top-sigla">UEJMVI</div>
             </div>
@@ -115,10 +170,9 @@
             <div class="top-barra"></div>
 
             <div class="top-der">
-                <!-- Logo derecho: estilos inline para que NUNCA se recorte -->
                 <img src="{{ url_for('static', filename='icons/logo_bachillerato.png') }}?v=2"
                      alt="Bachillerato Técnico"
-                     style="width:135px;height:auto;max-height:none;object-fit:contain;display:block;margin:0 auto;">
+                     style="width:95px;height:auto;max-height:none;object-fit:contain;display:block;margin:0 auto;">
             </div>
         </div>
 
