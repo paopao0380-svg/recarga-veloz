@@ -16,18 +16,23 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <style>
         .container.home-fit {
+            text-align: center;
+        }
+        .container.home-fit {
             max-width: 1100px;
             margin: 0 auto;
             padding: 8px 12px 12px !important;
             box-sizing: border-box;
         }
         .top-institucional {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            max-width: 900px;
-            margin: 0 auto 8px;
-            padding: 0 4px;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            max-width: 720px !important;
+            width: 100% !important;
+            margin: 0 auto 6px !important;
+            padding: 0 8px !important;
+            box-sizing: border-box !important;
             overflow: visible !important;
         }
         .top-izq, .top-der {
@@ -101,12 +106,13 @@
         }
         .ornamento {
             text-align: center !important;
-            margin: 10px auto 12px !important;
+            margin: 8px auto 10px !important;
             line-height: 0;
             width: 100%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            max-width: 720px;
+            display: flex !important;
+            justify-content: center !important;
+            align-items: center !important;
         }
         .ornamento img {
             width: min(320px, 55%) !important;
@@ -117,8 +123,10 @@
             opacity: 0.75;
         }
         .header {
-            text-align: center;
-            margin: 4px 0 8px;
+            text-align: center !important;
+            margin: 6px auto 8px !important;
+            max-width: 720px;
+            width: 100%;
         }
         .title {
             font-family: "Playfair Display", Georgia, serif !important;
