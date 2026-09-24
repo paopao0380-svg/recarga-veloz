@@ -12,32 +12,44 @@
     <title>Personal - Recarga Veloz</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <style>
-        body {
+        html, body {
             margin: 0;
-            min-height: 100vh;
+            height: 100%;
+            overflow-x: hidden;
+        }
+        body {
             background: #f0f4f8;
+            min-height: 100vh;
+            min-height: 100dvh;
         }
         .page-wrap {
             max-width: 1100px;
             margin: 0 auto;
-            padding: 14px 16px 30px;
+            padding: 6px 12px 8px;
+            min-height: 100vh;
+            min-height: 100dvh;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
         }
-        /* Membrete tipo barra (como el modelo) */
+        /* Membrete compacto */
         .membrete-barra {
             display: flex;
             align-items: center;
-            gap: 14px;
+            gap: 10px;
             background: linear-gradient(180deg, #f8fbff 0%, #ffffff 100%);
             border: 1px solid #d0dbe8;
-            border-radius: 14px;
-            box-shadow: 0 2px 8px rgba(26, 60, 110, 0.06);
-            padding: 10px 16px;
-            margin: 0 auto 28px;
+            border-radius: 12px;
+            box-shadow: 0 1px 6px rgba(26, 60, 110, 0.06);
+            padding: 6px 12px;
+            margin: 0 auto 10px;
             max-width: 920px;
+            width: 100%;
             box-sizing: border-box;
+            flex-shrink: 0;
         }
         .membrete-barra .escudo {
-            width: 58px;
+            width: 48px;
             height: auto;
             object-fit: contain;
             flex-shrink: 0;
@@ -45,150 +57,155 @@
         .membrete-barra .info {
             flex: 1;
             min-width: 0;
-            line-height: 1.25;
+            line-height: 1.15;
         }
         .membrete-barra .info .l1 {
-            font-size: 12px;
+            font-size: 11px;
             font-weight: 700;
             color: #1a3c6e;
-            letter-spacing: 0.5px;
             margin: 0;
         }
         .membrete-barra .info .l2 {
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 800;
             color: #1a3c6e;
             margin: 0;
         }
         .membrete-barra .info .l3 {
-            font-size: 11px;
+            font-size: 10px;
             color: #5a6a7a;
-            margin: 2px 0 0;
+            margin: 1px 0 0;
         }
         .membrete-barra .info .l4 {
-            font-size: 11px;
+            font-size: 10px;
             color: #5a6a7a;
             margin: 0;
         }
         .membrete-barra .info .l5 {
-            font-size: 10px;
+            font-size: 9px;
             color: #7a8a9a;
             margin: 0;
         }
         .membrete-barra .sigla-wrap {
             display: flex;
             align-items: center;
-            gap: 12px;
             flex-shrink: 0;
-            padding-left: 12px;
+            padding-left: 10px;
             border-left: 2px solid #c5d0e0;
         }
         .membrete-barra .sigla {
-            font-size: 22px;
+            font-size: 18px;
             font-weight: 900;
             color: #1a3c6e;
-            letter-spacing: 2px;
+            letter-spacing: 1.5px;
             line-height: 1;
         }
         .login-wrap {
             display: flex;
             justify-content: center;
+            align-items: center;
+            flex: 1 1 auto;
+            min-height: 0;
         }
         .login-box {
             background: white;
-            padding: 28px 30px;
-            border-radius: 16px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            padding: 16px 22px 14px;
+            border-radius: 14px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.08);
             width: 100%;
-            max-width: 400px;
+            max-width: 380px;
             text-align: center;
+            box-sizing: border-box;
         }
         .login-box h1 {
             color: #1a3c6e;
-            font-size: 26px;
-            margin: 0 0 4px;
+            font-size: 22px;
+            margin: 0 0 2px;
         }
         .login-box > p {
             color: #666;
-            margin: 0 0 18px;
-            font-size: 14px;
+            margin: 0 0 10px;
+            font-size: 13px;
         }
         .login-box form { text-align: left; }
         .login-box label {
             display: block;
             font-weight: 600;
-            margin: 12px 0 6px;
-            font-size: 14px;
+            margin: 8px 0 4px;
+            font-size: 13px;
             color: #333;
         }
         .login-box input {
             width: 100%;
-            padding: 12px 14px;
+            padding: 9px 12px;
             border: 1px solid #ddd;
-            border-radius: 10px;
-            font-size: 15px;
+            border-radius: 9px;
+            font-size: 14px;
             box-sizing: border-box;
         }
         .login-box input:focus {
             outline: none;
             border-color: #1a3c6e;
-            box-shadow: 0 0 0 3px rgba(26,60,110,0.12);
+            box-shadow: 0 0 0 2px rgba(26,60,110,0.12);
         }
         .btn-confirm {
             width: 100%;
-            margin-top: 18px;
-            padding: 14px;
+            margin-top: 12px;
+            padding: 11px;
             background: #28a745;
             color: white;
             border: none;
-            border-radius: 30px;
-            font-size: 16px;
+            border-radius: 28px;
+            font-size: 15px;
             font-weight: 700;
             cursor: pointer;
         }
         .btn-confirm:hover { background: #218838; }
         .hint {
-            margin-top: 18px;
-            font-size: 13px;
+            margin-top: 10px;
+            font-size: 12px;
             color: #666;
             text-align: center;
-            line-height: 1.6;
+            line-height: 1.45;
         }
         .login-box > a {
             display: block;
             text-align: center;
-            margin-top: 14px;
+            margin-top: 8px;
+            margin-bottom: 2px;
             color: #1a3c6e;
-            font-size: 14px;
+            font-size: 13px;
+            font-weight: 600;
         }
         .flash {
-            padding: 10px 12px;
+            padding: 8px 10px;
             border-radius: 8px;
-            margin-bottom: 12px;
-            font-size: 14px;
+            margin-bottom: 8px;
+            font-size: 13px;
             text-align: center;
         }
         .flash.error { background: #f8d7da; color: #721c24; }
         .flash.success { background: #d4edda; color: #155724; }
         @media (max-width: 600px) {
-            .membrete-barra {
-                gap: 10px;
-                padding: 8px 12px;
-            }
-            .membrete-barra .escudo { width: 48px; }
+            .membrete-barra .escudo { width: 40px; }
             .membrete-barra .info .l1 { font-size: 10px; }
-            .membrete-barra .info .l2 { font-size: 12px; }
-            .membrete-barra .info .l3,
-            .membrete-barra .info .l4 { font-size: 10px; }
-            .membrete-barra .info .l5 { font-size: 9px; }
-            .membrete-barra .sigla { font-size: 16px; letter-spacing: 1px; }
-            .login-box { padding: 22px 16px; }
+            .membrete-barra .info .l2 { font-size: 11px; }
+            .membrete-barra .sigla { font-size: 14px; }
+            .login-box { padding: 14px 14px 10px; }
+            .login-box h1 { font-size: 20px; }
+        }
+        @media (max-height: 700px) {
+            .membrete-barra { padding: 4px 10px; margin-bottom: 6px; }
+            .membrete-barra .escudo { width: 40px; }
+            .login-box { padding: 12px 18px 10px; }
+            .login-box h1 { font-size: 20px; }
+            .hint { font-size: 11px; margin-top: 6px; }
+            .btn-confirm { padding: 9px; margin-top: 8px; }
         }
     </style>
 </head>
 <body>
     <div class="page-wrap">
-        <!-- Membrete superior (modelo solicitado) -->
         <div class="membrete-barra">
             <img class="escudo"
                  src="{{ url_for('static', filename='icons/escudo.png') }}"
@@ -230,8 +247,8 @@
                 </form>
 
                 <p class="hint">
-                    <strong>Usuarios de prueba:</strong><br><br>
-                    <strong>admin</strong> / admin123 → Administración e Inventario<br>
+                    <strong>Usuarios de prueba:</strong><br>
+                    <strong>admin</strong> / admin123 → Administración<br>
                     <strong>cajero</strong> / cajero123 → Pedidos del Bar<br>
                     <strong>contador</strong> / contador123 → Panel Contable
                 </p>
