@@ -168,15 +168,27 @@ class _FakeResult:
 
 
 class _SmartRow(dict):
-    """Fila que admite row['columna'] y row[0] (como sqlite3.Row)."""
+    """Fila que admite row['columna'], row[0] y row.columna (como sqlite3.Row)."""
     def __init__(self, colnames, values):
         super().__init__(zip(colnames, values))
-        self._values = values
+        self._values = list(values)
+        self._colnames = list(colnames)
 
     def __getitem__(self, key):
         if isinstance(key, int):
             return self._values[key]
         return super().__getitem__(key)
+
+    def __getattr__(self, name):
+        if name.startswith("_"):
+            raise AttributeError(name)
+        try:
+            return self[name]
+        except KeyError as e:
+            raise AttributeError(name) from e
+
+    def keys(self):
+        return self._colnames
 
 
 def get_db():
@@ -685,13 +697,15 @@ def dashboard_contable():
         FROM detalle_pedidos d
         JOIN productos pr ON d.producto_id = pr.id
         LEFT JOIN categorias c ON pr.categoria_id = c.id
-        GROUP BY pr.id
+        GROUP BY pr.id, pr.nombre, c.nombre
         ORDER BY total_vendido DESC
         LIMIT 8
     """).fetchall()
     
     conn.close()
-    utilidad = ventas_hoy["total"] - gastos_hoy["total"]
+    v_total = float(ventas_hoy["total"] or 0) if ventas_hoy else 0.0
+    g_total = float(gastos_hoy["total"] or 0) if gastos_hoy else 0.0
+    utilidad = v_total - g_total
     
     return render_template("contable.html",
         ventas_hoy=ventas_hoy,
