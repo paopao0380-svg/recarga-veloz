@@ -3,6 +3,7 @@ from flask_login import LoginManager, UserMixin, login_user, login_required, log
 from werkzeug.utils import secure_filename
 from datetime import datetime, timedelta
 import sqlite3
+import re
 import os
 import uuid
 import csv
@@ -46,6 +47,16 @@ if DATABASE_URL.startswith("postgres://"):
 
 USE_POSTGRES = bool(DATABASE_URL)
 
+def sql_group_concat(expr, sep=", "):
+    """GROUP_CONCAT compatible SQLite / Postgres."""
+    if USE_POSTGRES:
+        # Evitar error de concatenar texto + entero
+        expr_pg = expr.replace("d.cantidad", "d.cantidad::text")
+        expr_pg = expr_pg.replace("pr.nombre", "pr.nombre::text")
+        return f"STRING_AGG(({expr_pg})::text, '{sep}')"
+    return f"GROUP_CONCAT({expr}, '{sep}')"
+
+
 
 class _PGCursorWrapper:
     """Hace que el cursor de Postgres se parezca al de sqlite3."""
@@ -56,6 +67,18 @@ class _PGCursorWrapper:
         sql = sql.replace("?", "%s")
         sql = sql.replace("INTEGER PRIMARY KEY AUTOINCREMENT", "SERIAL PRIMARY KEY")
         sql = sql.replace("AUTOINCREMENT", "")
+        sql = re.sub(
+            r"GROUP_CONCAT\((.+?),\s*'([^']*)'\)",
+            r"STRING_AGG((\1)::text, '\2')",
+            sql,
+            flags=re.IGNORECASE | re.DOTALL,
+        )
+        sql = re.sub(
+            r"\bdate\(([^)]+)\)",
+            r"DATE(SUBSTRING((\1)::text FROM 1 FOR 10))",
+            sql,
+            flags=re.IGNORECASE,
+        )
         if params is None:
             self._cursor.execute(sql)
         else:
@@ -85,9 +108,23 @@ class _PGConnectionWrapper:
             return _FakeResult(row)
 
         sql_pg = sql.replace("?", "%s")
-        # Ajustes mínimos de tipos SQLite → Postgres en DDL
+        # DDL
         sql_pg = sql_pg.replace("INTEGER PRIMARY KEY AUTOINCREMENT", "SERIAL PRIMARY KEY")
         sql_pg = sql_pg.replace("AUTOINCREMENT", "")
+        # SQLite GROUP_CONCAT(expr, sep) → Postgres STRING_AGG
+        sql_pg = re.sub(
+            r"GROUP_CONCAT\((.+?),\s*'([^']*)'\)",
+            r"STRING_AGG((\1)::text, '\2')",
+            sql_pg,
+            flags=re.IGNORECASE | re.DOTALL,
+        )
+        # date(col) de SQLite → DATE en Postgres (fechas guardadas como texto)
+        sql_pg = re.sub(
+            r"\bdate\(([^)]+)\)",
+            r"DATE(SUBSTRING((\1)::text FROM 1 FOR 10))",
+            sql_pg,
+            flags=re.IGNORECASE,
+        )
 
         cur = self._conn.cursor()
         if params is None:
@@ -441,12 +478,14 @@ def pedidos_bar():
     if current_user.rol not in ["cajero", "admin"]:
         return redirect(url_for("index"))
     conn = get_db()
-    pedidos = conn.execute("""
-        SELECT p.*, GROUP_CONCAT(pr.nombre || ' x' || d.cantidad, ', ') as productos
+    gc = sql_group_concat("pr.nombre || ' x' || d.cantidad")
+    pedidos = conn.execute(f"""
+        SELECT p.id, p.numero_orden, p.fecha, p.estado, p.total,
+               {gc} as productos
         FROM pedidos p
         LEFT JOIN detalle_pedidos d ON p.id = d.pedido_id
         LEFT JOIN productos pr ON d.producto_id = pr.id
-        GROUP BY p.id
+        GROUP BY p.id, p.numero_orden, p.fecha, p.estado, p.total
         ORDER BY p.id DESC
         LIMIT 40
     """).fetchall()
@@ -617,15 +656,17 @@ def dashboard_contable():
     ).fetchone()
     
     # Últimos pedidos CON productos y categorías
-    ultimos_pedidos = conn.execute("""
+    gc_prod = sql_group_concat("pr.nombre || ' x' || d.cantidad")
+    gc_cat = sql_group_concat("c.nombre")
+    ultimos_pedidos = conn.execute(f"""
         SELECT p.id, p.numero_orden, p.fecha, p.estado, p.total,
-               GROUP_CONCAT(pr.nombre || ' x' || d.cantidad, ', ') as productos,
-               GROUP_CONCAT(c.nombre, ', ') as categorias
+               {gc_prod} as productos,
+               {gc_cat} as categorias
         FROM pedidos p
         LEFT JOIN detalle_pedidos d ON p.id = d.pedido_id
         LEFT JOIN productos pr ON d.producto_id = pr.id
         LEFT JOIN categorias c ON pr.categoria_id = c.id
-        GROUP BY p.id
+        GROUP BY p.id, p.numero_orden, p.fecha, p.estado, p.total
         ORDER BY p.id DESC
         LIMIT 15
     """).fetchall()
@@ -716,16 +757,18 @@ def reportes_contable():
         FROM gastos WHERE date(fecha) BETWEEN ? AND ?
     """, (fecha_desde, fecha_hasta)).fetchone()
     
-    pedidos = conn.execute("""
-        SELECT p.*,
-               GROUP_CONCAT(pr.nombre || ' x' || d.cantidad, ', ') as productos,
-               GROUP_CONCAT(c.nombre, ', ') as categorias
+    gc_prod = sql_group_concat("pr.nombre || ' x' || d.cantidad")
+    gc_cat = sql_group_concat("c.nombre")
+    pedidos = conn.execute(f"""
+        SELECT p.id, p.numero_orden, p.fecha, p.estado, p.total,
+               {gc_prod} as productos,
+               {gc_cat} as categorias
         FROM pedidos p
         LEFT JOIN detalle_pedidos d ON p.id = d.pedido_id
         LEFT JOIN productos pr ON d.producto_id = pr.id
         LEFT JOIN categorias c ON pr.categoria_id = c.id
         WHERE date(p.fecha) BETWEEN ? AND ?
-        GROUP BY p.id
+        GROUP BY p.id, p.numero_orden, p.fecha, p.estado, p.total
         ORDER BY p.fecha DESC
     """, (fecha_desde, fecha_hasta)).fetchall()
     
@@ -797,16 +840,19 @@ def reportes_excel():
     ).fetchone()
     utilidad = ingresos[0] - egresos[0]
 
-    pedidos = conn.execute("""
+    gc_prod = sql_group_concat("pr.nombre || ' x' || d.cantidad")
+    gc_cat = sql_group_concat("c.nombre")
+    pedidos = conn.execute(f"""
         SELECT p.numero_orden, p.fecha, p.total, p.estado,
-               GROUP_CONCAT(pr.nombre || ' x' || d.cantidad, ', '),
-               GROUP_CONCAT(c.nombre, ', ')
+               {gc_prod},
+               {gc_cat}
         FROM pedidos p
         LEFT JOIN detalle_pedidos d ON p.id = d.pedido_id
         LEFT JOIN productos pr ON d.producto_id = pr.id
         LEFT JOIN categorias c ON pr.categoria_id = c.id
         WHERE date(p.fecha) BETWEEN ? AND ?
-        GROUP BY p.id ORDER BY p.fecha
+        GROUP BY p.id, p.numero_orden, p.fecha, p.total, p.estado
+        ORDER BY p.fecha
     """, (fecha_desde, fecha_hasta)).fetchall()
 
     gastos_lista = conn.execute(
