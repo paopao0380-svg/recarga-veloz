@@ -37,24 +37,191 @@
             letter-spacing: 0.2px;
         }
 </style>
+
+    <style>
+        .membrete-barra {
+            display: flex !important;
+            align-items: center !important;
+            gap: 12px !important;
+            background: linear-gradient(180deg, #f8fbff 0%, #ffffff 100%) !important;
+            border: 1px solid #d0dbe8 !important;
+            border-left: none !important;
+            border-radius: 12px !important;
+            box-shadow: 0 1px 6px rgba(26, 60, 110, 0.06) !important;
+            padding: 8px 14px !important;
+            margin: 8px auto 16px !important;
+            max-width: 920px !important;
+            width: 100% !important;
+            box-sizing: border-box !important;
+        }
+        .membrete-barra .escudo {
+            width: 52px !important;
+            height: auto !important;
+            max-height: none !important;
+            object-fit: contain !important;
+            flex-shrink: 0 !important;
+        }
+        .membrete-barra .info { flex: 1; min-width: 0; line-height: 1.15; }
+        .membrete-barra .info .l1 { font-size: 11px; font-weight: 700; color: #1a3c6e; margin: 0; }
+        .membrete-barra .info .l2 { font-size: 13px; font-weight: 800; color: #1a3c6e; margin: 0; }
+        .membrete-barra .info .l3 { font-size: 10px; color: #5a6a7a; margin: 1px 0 0; }
+        .membrete-barra .info .l4 { font-size: 10px; color: #5a6a7a; margin: 0; }
+        .membrete-barra .info .l5 { font-size: 9px; color: #7a8a9a; margin: 0; }
+        .membrete-barra .sigla-wrap {
+            display: flex; align-items: center; flex-shrink: 0;
+            padding-left: 12px; border-left: 2px solid #c5d0e0;
+        }
+        .membrete-barra .sigla {
+            font-size: 20px; font-weight: 900; color: #1a3c6e;
+            letter-spacing: 1.5px; line-height: 1;
+        }
+        @media (max-width: 600px) {
+            .membrete-barra .escudo { width: 42px !important; }
+            .membrete-barra .info .l1 { font-size: 10px; }
+            .membrete-barra .info .l2 { font-size: 12px; }
+            .membrete-barra .sigla { font-size: 15px; }
+        }
+    </style>
+
+
+    <style>
+        /* Barra de navegación de productos — más atractiva */
+        .top-bar {
+            display: flex !important;
+            justify-content: space-between !important;
+            align-items: center !important;
+            gap: 10px !important;
+            margin: 4px 0 18px !important;
+            padding: 8px 4px !important;
+            background: transparent !important;
+        }
+        .top-bar h1 {
+            color: #1a3c6e !important;
+            font-size: clamp(20px, 4vw, 26px) !important;
+            font-weight: 800 !important;
+            margin: 0 !important;
+            letter-spacing: 0.3px !important;
+            text-align: center !important;
+            flex: 1 !important;
+        }
+        .back-btn {
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 6px !important;
+            background: linear-gradient(135deg, #e8f0fe 0%, #d4e4fc 100%) !important;
+            color: #1a3c6e !important;
+            text-decoration: none !important;
+            font-weight: 700 !important;
+            font-size: 14px !important;
+            padding: 10px 16px !important;
+            border-radius: 30px !important;
+            border: 1px solid #b8d0f0 !important;
+            box-shadow: 0 2px 6px rgba(26, 60, 110, 0.12) !important;
+            transition: transform 0.15s, box-shadow 0.15s !important;
+            white-space: nowrap !important;
+        }
+        .back-btn:hover {
+            transform: translateY(-1px) !important;
+            box-shadow: 0 4px 10px rgba(26, 60, 110, 0.18) !important;
+            background: linear-gradient(135deg, #d4e4fc 0%, #c2d8f8 100%) !important;
+        }
+        .cart-btn {
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 6px !important;
+            background: linear-gradient(135deg, #ff6b35 0%, #f7c59f 50%, #28a745 100%) !important;
+            background: linear-gradient(135deg, #e85d04 0%, #f48c06 45%, #2a9d8f 100%) !important;
+            color: #fff !important;
+            text-decoration: none !important;
+            font-weight: 800 !important;
+            font-size: 14px !important;
+            padding: 10px 16px !important;
+            border-radius: 30px !important;
+            border: none !important;
+            box-shadow: 0 3px 10px rgba(232, 93, 4, 0.35) !important;
+            transition: transform 0.15s, box-shadow 0.15s !important;
+            white-space: nowrap !important;
+        }
+        .cart-btn:hover {
+            transform: translateY(-1px) scale(1.02) !important;
+            box-shadow: 0 5px 14px rgba(232, 93, 4, 0.45) !important;
+        }
+        /* Tarjetas de producto más atractivas */
+        .product-card {
+            background: white !important;
+            border-radius: 16px !important;
+            overflow: hidden !important;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.09) !important;
+            transition: transform 0.18s, box-shadow 0.18s !important;
+            border: 1px solid #eef2f7 !important;
+        }
+        .product-card:hover {
+            transform: translateY(-4px) !important;
+            box-shadow: 0 8px 22px rgba(26, 60, 110, 0.14) !important;
+        }
+        .product-card img {
+            height: 150px !important;
+            object-fit: cover !important;
+        }
+        .product-info h3 {
+            font-size: 15px !important;
+            font-weight: 700 !important;
+            color: #1a2a3a !important;
+        }
+        .price {
+            color: #1a3c6e !important;
+            font-weight: 800 !important;
+            font-size: 18px !important;
+        }
+        .btn-add {
+            display: inline-block !important;
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%) !important;
+            color: white !important;
+            padding: 10px 22px !important;
+            border-radius: 25px !important;
+            text-decoration: none !important;
+            font-weight: 700 !important;
+            font-size: 14px !important;
+            box-shadow: 0 3px 8px rgba(40, 167, 69, 0.3) !important;
+            transition: transform 0.15s, box-shadow 0.15s !important;
+        }
+        .btn-add:hover {
+            transform: scale(1.04) !important;
+            box-shadow: 0 5px 12px rgba(40, 167, 69, 0.4) !important;
+            background: linear-gradient(135deg, #218838 0%, #1aa179 100%) !important;
+        }
+        @media (max-width: 480px) {
+            .back-btn, .cart-btn {
+                padding: 8px 12px !important;
+                font-size: 13px !important;
+            }
+            .top-bar h1 { font-size: 18px !important; }
+        }
+    </style>
+
 </head>
 <body>
     <div class="container">
 
-        <!-- Membrete institucional -->
-        <div class="membrete-barra" style="display:flex;align-items:center;gap:12px;background:linear-gradient(180deg,#f8fbff 0%,#ffffff 100%);border:1px solid #d0dbe8;border-radius:12px;box-shadow:0 1px 6px rgba(26,60,110,0.06);padding:8px 14px;margin:0 auto 16px;max-width:920px;width:100%;box-sizing:border-box;">
-            <img src="{{ url_for('static', filename='icons/escudo.png') }}" alt="Escudo" style="width:52px;height:auto;object-fit:contain;flex-shrink:0;" onerror="this.src='{{ url_for('static', filename='icons/escudo.jpg') }}'">
-            <div style="flex:1;min-width:0;line-height:1.15;">
-                <div style="font-size:11px;font-weight:700;color:#1a3c6e;margin:0;">UNIDAD EDUCATIVA</div>
-                <div style="font-size:13px;font-weight:800;color:#1a3c6e;margin:0;">DR. JOSÉ MARÍA VELASCO IBARRA</div>
-                <div style="font-size:10px;color:#5a6a7a;margin:1px 0 0;">El Guabo – El Oro – Ecuador</div>
-                <div style="font-size:10px;color:#5a6a7a;margin:0;"><strong>AMIE:</strong> 07H00574</div>
-                <div style="font-size:9px;color:#7a8a9a;margin:0;">Panamericana sur entre vía Pasaje y Florentino Sáenz de Villaverde</div>
+        <div class="membrete-barra">
+            <img class="escudo"
+                 src="{{ url_for('static', filename='icons/escudo.png') }}"
+                 alt="Escudo"
+                 onerror="this.src='{{ url_for('static', filename='icons/escudo.jpg') }}'">
+            <div class="info">
+                <div class="l1">UNIDAD EDUCATIVA</div>
+                <div class="l2">DR. JOSÉ MARÍA VELASCO IBARRA</div>
+                <div class="l3">El Guabo – El Oro – Ecuador</div>
+                <div class="l4"><strong>AMIE:</strong> 07H00574</div>
+                <div class="l5">Panamericana sur entre vía Pasaje y Florentino Sáenz de Villaverde</div>
             </div>
-            <div style="display:flex;align-items:center;flex-shrink:0;padding-left:12px;border-left:2px solid #c5d0e0;">
-                <div style="font-size:20px;font-weight:900;color:#1a3c6e;letter-spacing:1.5px;line-height:1;">UEJMVI</div>
+            <div class="sigla-wrap">
+                <div class="sigla">UEJMVI</div>
             </div>
         </div>
+
+
+        <!-- Membrete institucional -->
 
 
 
