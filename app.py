@@ -30,10 +30,142 @@ login_manager.init_app(app)
 login_manager.login_view = "login"
 
 # -----------------------------
-# Base de datos
+# Base de datos (SQLite local O PostgreSQL gratis en la nube)
 # -----------------------------
+# En Render Free: crea una base GRATIS en https://neon.tech
+# y agrega la variable de entorno DATABASE_URL (la da Neon).
+# Así los datos NO se borran al actualizar el código.
+_BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+_DEFAULT_DB = os.path.join(_BASE_DIR, "data", "recarga_veloz.db")
+DATABASE_PATH = os.environ.get("DATABASE_PATH", _DEFAULT_DB)
+DATABASE_URL = os.environ.get("DATABASE_URL", "").strip()
+
+# Render a veces da postgres:// — psycopg2 prefiere postgresql://
+if DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+
+USE_POSTGRES = bool(DATABASE_URL)
+
+
+class _PGCursorWrapper:
+    """Hace que el cursor de Postgres se parezca al de sqlite3."""
+    def __init__(self, cursor):
+        self._cursor = cursor
+
+    def execute(self, sql, params=None):
+        sql = sql.replace("?", "%s")
+        sql = sql.replace("INTEGER PRIMARY KEY AUTOINCREMENT", "SERIAL PRIMARY KEY")
+        sql = sql.replace("AUTOINCREMENT", "")
+        if params is None:
+            self._cursor.execute(sql)
+        else:
+            self._cursor.execute(sql, params)
+        return self
+
+    def fetchone(self):
+        row = self._cursor.fetchone()
+        return row
+
+    def fetchall(self):
+        return self._cursor.fetchall()
+
+
+class _PGConnectionWrapper:
+    """API compatible con sqlite3.Connection (execute/commit/close)."""
+    def __init__(self, conn):
+        self._conn = conn
+
+    def execute(self, sql, params=None):
+        # last_insert_rowid de SQLite → equivalente en Postgres
+        if "last_insert_rowid()" in sql.lower():
+            cur = self._conn.cursor()
+            cur.execute("SELECT LASTVAL()")
+            row = cur.fetchone()
+            cur.close()
+            return _FakeResult(row)
+
+        sql_pg = sql.replace("?", "%s")
+        # Ajustes mínimos de tipos SQLite → Postgres en DDL
+        sql_pg = sql_pg.replace("INTEGER PRIMARY KEY AUTOINCREMENT", "SERIAL PRIMARY KEY")
+        sql_pg = sql_pg.replace("AUTOINCREMENT", "")
+
+        cur = self._conn.cursor()
+        if params is None:
+            cur.execute(sql_pg)
+        else:
+            cur.execute(sql_pg, params)
+        return _PGResult(cur)
+
+    def commit(self):
+        self._conn.commit()
+
+    def close(self):
+        self._conn.close()
+
+    def cursor(self):
+        return _PGCursorWrapper(self._conn.cursor())
+
+
+class _PGResult:
+    def __init__(self, cursor):
+        self._cursor = cursor
+        self._cols = [d[0] for d in cursor.description] if cursor.description else []
+
+    def fetchone(self):
+        row = self._cursor.fetchone()
+        if row is None:
+            return None
+        return _SmartRow(self._cols, row)
+
+    def fetchall(self):
+        rows = self._cursor.fetchall()
+        return [_SmartRow(self._cols, r) for r in rows]
+
+
+class _FakeResult:
+    def __init__(self, row):
+        self._row = row
+
+    def fetchone(self):
+        return self._row
+
+
+class _SmartRow(dict):
+    """Fila que admite row['columna'] y row[0] (como sqlite3.Row)."""
+    def __init__(self, colnames, values):
+        super().__init__(zip(colnames, values))
+        self._values = values
+
+    def __getitem__(self, key):
+        if isinstance(key, int):
+            return self._values[key]
+        return super().__getitem__(key)
+
+
 def get_db():
-    conn = sqlite3.connect("recarga_veloz.db")
+    """
+    Conecta a la base de datos.
+    - Si existe DATABASE_URL (Neon/Postgres gratis) → datos persistentes en la nube.
+    - Si no → SQLite local (se puede perder en Render Free al redesplegar).
+    """
+    if USE_POSTGRES:
+        import psycopg2
+        import psycopg2.extras
+
+        def smart_factory(cursor):
+            colnames = [d[0] for d in cursor.description] if cursor.description else []
+            def factory(cur, row):
+                return _SmartRow(colnames, row)
+            return factory
+
+        conn = psycopg2.connect(DATABASE_URL)
+        # Usamos cursor normal; el wrapper convierte resultados a _SmartRow
+        return _PGConnectionWrapper(conn)
+
+    db_dir = os.path.dirname(DATABASE_PATH)
+    if db_dir:
+        os.makedirs(db_dir, exist_ok=True)
+    conn = sqlite3.connect(DATABASE_PATH)
     conn.row_factory = sqlite3.Row
     return conn
 
@@ -911,6 +1043,26 @@ def manifest():
 # Inicializar BD al arrancar (local y en la nube)
 with app.app_context():
     init_db()
+
+
+@app.route("/admin/backup-db")
+@login_required
+def backup_db():
+    """Descarga la base de datos completa (pedidos, gastos, productos). Solo admin/contador."""
+    if current_user.rol not in ["admin", "contador"]:
+        flash("No autorizado", "error")
+        return redirect(url_for("index"))
+    if not os.path.exists(DATABASE_PATH):
+        flash("No hay base de datos para descargar", "error")
+        return redirect(url_for("admin_panel") if current_user.rol == "admin" else url_for("dashboard_contable"))
+    from flask import send_file
+    return send_file(
+        DATABASE_PATH,
+        as_attachment=True,
+        download_name=f"recarga_veloz_backup_{datetime.now().strftime('%Y%m%d_%H%M')}.db",
+        mimetype="application/octet-stream",
+    )
+
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
