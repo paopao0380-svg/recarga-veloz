@@ -228,9 +228,21 @@ def confirmar():
     ultimo = conn.execute("SELECT COUNT(*) FROM pedidos").fetchone()[0]
     numero_orden = f"RV-{ultimo + 1:04d}"
     total = 0
+    items = []
     for pid, cantidad in session["carrito"].items():
-        prod = conn.execute("SELECT precio FROM productos WHERE id = ?", (pid,)).fetchone()
-        total += prod["precio"] * cantidad
+        prod = conn.execute(
+            "SELECT id, nombre, precio FROM productos WHERE id = ?", (pid,)
+        ).fetchone()
+        if not prod:
+            continue
+        subtotal = prod["precio"] * cantidad
+        total += subtotal
+        items.append({
+            "nombre": prod["nombre"],
+            "cantidad": cantidad,
+            "precio": prod["precio"],
+            "subtotal": subtotal,
+        })
     conn.execute(
         "INSERT INTO pedidos (numero_orden, fecha, estado, total) VALUES (?, ?, ?, ?)",
         (numero_orden, datetime.now().strftime("%Y-%m-%d %H:%M"), "Pendiente", total)
@@ -238,6 +250,8 @@ def confirmar():
     pedido_id = conn.execute("SELECT last_insert_rowid()").fetchone()[0]
     for pid, cantidad in session["carrito"].items():
         prod = conn.execute("SELECT precio FROM productos WHERE id = ?", (pid,)).fetchone()
+        if not prod:
+            continue
         conn.execute(
             "INSERT INTO detalle_pedidos (pedido_id, producto_id, cantidad, precio_unitario) VALUES (?, ?, ?, ?)",
             (pedido_id, pid, cantidad, prod["precio"])
@@ -246,7 +260,12 @@ def confirmar():
     conn.commit()
     conn.close()
     session.pop("carrito", None)
-    return render_template("confirmacion.html", numero_orden=numero_orden)
+    return render_template(
+        "confirmacion.html",
+        numero_orden=numero_orden,
+        items=items,
+        total=total,
+    )
 
 # -----------------------------
 # Login
