@@ -47,6 +47,17 @@ if DATABASE_URL.startswith("postgres://"):
 
 USE_POSTGRES = bool(DATABASE_URL)
 
+def sql_date_col(col="fecha"):
+    """Extrae YYYY-MM-DD de un texto de fecha (compatible SQLite y Postgres)."""
+    if USE_POSTGRES:
+        return f"SUBSTRING(({col})::text FROM 1 FOR 10)"
+    return f"substr({col}, 1, 10)"
+
+def sql_date_between(col="fecha"):
+    """Prefijo WHERE para rango de fechas: ... WHERE {sql_date_between('p.fecha')} BETWEEN ? AND ?"""
+    return sql_date_col(col)
+
+
 def sql_group_concat(expr, sep=", "):
     """GROUP_CONCAT compatible SQLite / Postgres."""
     if USE_POSTGRES:
@@ -763,12 +774,12 @@ def reportes_contable():
     
     ingresos = conn.execute("""
         SELECT COALESCE(SUM(total), 0) as total, COUNT(*) as cantidad
-        FROM pedidos WHERE date(fecha) BETWEEN ? AND ?
+        FROM pedidos WHERE substr(fecha, 1, 10) BETWEEN ? AND ?
     """, (fecha_desde, fecha_hasta)).fetchone()
     
     egresos = conn.execute("""
         SELECT COALESCE(SUM(monto), 0) as total, COUNT(*) as cantidad
-        FROM gastos WHERE date(fecha) BETWEEN ? AND ?
+        FROM gastos WHERE substr(fecha, 1, 10) BETWEEN ? AND ?
     """, (fecha_desde, fecha_hasta)).fetchone()
     
     gc_prod = sql_group_concat("pr.nombre || ' x' || d.cantidad")
@@ -781,13 +792,13 @@ def reportes_contable():
         LEFT JOIN detalle_pedidos d ON p.id = d.pedido_id
         LEFT JOIN productos pr ON d.producto_id = pr.id
         LEFT JOIN categorias c ON pr.categoria_id = c.id
-        WHERE date(p.fecha) BETWEEN ? AND ?
+        WHERE substr(p.fecha, 1, 10) BETWEEN ? AND ?
         GROUP BY p.id, p.numero_orden, p.fecha, p.estado, p.total
         ORDER BY p.fecha DESC
     """, (fecha_desde, fecha_hasta)).fetchall()
     
     gastos_lista = conn.execute("""
-        SELECT * FROM gastos WHERE date(fecha) BETWEEN ? AND ? ORDER BY fecha DESC
+        SELECT * FROM gastos WHERE substr(fecha, 1, 10) BETWEEN ? AND ? ORDER BY fecha DESC
     """, (fecha_desde, fecha_hasta)).fetchall()
     
     top_productos = conn.execute("""
@@ -797,8 +808,8 @@ def reportes_contable():
         JOIN productos pr ON d.producto_id = pr.id
         LEFT JOIN categorias c ON pr.categoria_id = c.id
         JOIN pedidos p ON d.pedido_id = p.id
-        WHERE date(p.fecha) BETWEEN ? AND ?
-        GROUP BY pr.id
+        WHERE substr(p.fecha, 1, 10) BETWEEN ? AND ?
+        GROUP BY pr.id, pr.nombre, c.nombre
         ORDER BY total_vendido DESC
         LIMIT 10
     """, (fecha_desde, fecha_hasta)).fetchall()
@@ -810,14 +821,14 @@ def reportes_contable():
         JOIN productos pr ON d.producto_id = pr.id
         LEFT JOIN categorias c ON pr.categoria_id = c.id
         JOIN pedidos p ON d.pedido_id = p.id
-        WHERE date(p.fecha) BETWEEN ? AND ?
-        GROUP BY c.id
+        WHERE substr(p.fecha, 1, 10) BETWEEN ? AND ?
+        GROUP BY c.id, c.nombre
         ORDER BY monto DESC
     """, (fecha_desde, fecha_hasta)).fetchall()
     
     conn.close()
     
-    utilidad = ingresos["total"] - egresos["total"]
+    utilidad = float(ingresos["total"] or 0) - float(egresos["total"] or 0)
     
     return render_template("reportes.html",
         fecha_desde=fecha_desde,
@@ -845,14 +856,14 @@ def reportes_excel():
     conn = get_db()
 
     ingresos = conn.execute(
-        "SELECT COALESCE(SUM(total),0), COUNT(*) FROM pedidos WHERE date(fecha) BETWEEN ? AND ?",
+        "SELECT COALESCE(SUM(total),0), COUNT(*) FROM pedidos WHERE substr(fecha, 1, 10) BETWEEN ? AND ?",
         (fecha_desde, fecha_hasta)
     ).fetchone()
     egresos = conn.execute(
-        "SELECT COALESCE(SUM(monto),0), COUNT(*) FROM gastos WHERE date(fecha) BETWEEN ? AND ?",
+        "SELECT COALESCE(SUM(monto),0), COUNT(*) FROM gastos WHERE substr(fecha, 1, 10) BETWEEN ? AND ?",
         (fecha_desde, fecha_hasta)
     ).fetchone()
-    utilidad = ingresos[0] - egresos[0]
+    utilidad = float(ingresos[0] or 0) - float(egresos[0] or 0)
 
     gc_prod = sql_group_concat("pr.nombre || ' x' || d.cantidad")
     gc_cat = sql_group_concat("c.nombre")
@@ -864,13 +875,13 @@ def reportes_excel():
         LEFT JOIN detalle_pedidos d ON p.id = d.pedido_id
         LEFT JOIN productos pr ON d.producto_id = pr.id
         LEFT JOIN categorias c ON pr.categoria_id = c.id
-        WHERE date(p.fecha) BETWEEN ? AND ?
+        WHERE substr(p.fecha, 1, 10) BETWEEN ? AND ?
         GROUP BY p.id, p.numero_orden, p.fecha, p.total, p.estado
         ORDER BY p.fecha
     """, (fecha_desde, fecha_hasta)).fetchall()
 
     gastos_lista = conn.execute(
-        "SELECT descripcion, categoria, monto, fecha FROM gastos WHERE date(fecha) BETWEEN ? AND ? ORDER BY fecha",
+        "SELECT descripcion, categoria, monto, fecha FROM gastos WHERE substr(fecha, 1, 10) BETWEEN ? AND ? ORDER BY fecha",
         (fecha_desde, fecha_hasta)
     ).fetchall()
 
@@ -880,8 +891,9 @@ def reportes_excel():
         JOIN productos pr ON d.producto_id = pr.id
         LEFT JOIN categorias c ON pr.categoria_id = c.id
         JOIN pedidos p ON d.pedido_id = p.id
-        WHERE date(p.fecha) BETWEEN ? AND ?
-        GROUP BY pr.id ORDER BY SUM(d.cantidad) DESC
+        WHERE substr(p.fecha, 1, 10) BETWEEN ? AND ?
+        GROUP BY pr.id, pr.nombre, c.nombre
+        ORDER BY SUM(d.cantidad) DESC
         LIMIT 10
     """, (fecha_desde, fecha_hasta)).fetchall()
 
@@ -891,8 +903,9 @@ def reportes_excel():
         JOIN productos pr ON d.producto_id = pr.id
         LEFT JOIN categorias c ON pr.categoria_id = c.id
         JOIN pedidos p ON d.pedido_id = p.id
-        WHERE date(p.fecha) BETWEEN ? AND ?
-        GROUP BY c.id ORDER BY 2 DESC
+        WHERE substr(p.fecha, 1, 10) BETWEEN ? AND ?
+        GROUP BY c.id, c.nombre
+        ORDER BY 2 DESC
     """, (fecha_desde, fecha_hasta)).fetchall()
 
     conn.close()
@@ -1108,20 +1121,30 @@ with app.app_context():
 @app.route("/admin/backup-db")
 @login_required
 def backup_db():
-    """Descarga la base de datos completa (pedidos, gastos, productos). Solo admin/contador."""
+    """Descarga respaldo de datos (JSON). Solo admin/contador."""
     if current_user.rol not in ["admin", "contador"]:
         flash("No autorizado", "error")
         return redirect(url_for("index"))
-    if not os.path.exists(DATABASE_PATH):
-        flash("No hay base de datos para descargar", "error")
-        return redirect(url_for("admin_panel") if current_user.rol == "admin" else url_for("dashboard_contable"))
-    from flask import send_file
-    return send_file(
-        DATABASE_PATH,
-        as_attachment=True,
-        download_name=f"recarga_veloz_backup_{datetime.now().strftime('%Y%m%d_%H%M')}.db",
-        mimetype="application/octet-stream",
-    )
+    import json
+    conn = get_db()
+    data = {
+        "pedidos": [dict(r) for r in conn.execute("SELECT * FROM pedidos").fetchall()],
+        "detalle_pedidos": [dict(r) for r in conn.execute("SELECT * FROM detalle_pedidos").fetchall()],
+        "gastos": [dict(r) for r in conn.execute("SELECT * FROM gastos").fetchall()],
+        "productos": [dict(r) for r in conn.execute("SELECT * FROM productos").fetchall()],
+    }
+    conn.close()
+    # Convertir valores no JSON (Decimal, etc.)
+    def _default(o):
+        try:
+            return float(o)
+        except Exception:
+            return str(o)
+    payload = json.dumps(data, ensure_ascii=False, indent=2, default=_default)
+    resp = make_response(payload)
+    resp.headers["Content-Type"] = "application/json; charset=utf-8"
+    resp.headers["Content-Disposition"] = f"attachment; filename=recarga_veloz_backup_{datetime.now().strftime('%Y%m%d_%H%M')}.json"
+    return resp
 
 
 if __name__ == "__main__":
