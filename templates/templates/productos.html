@@ -13,7 +13,7 @@
     <link rel="icon" type="image/png" sizes="192x192" href="/static/icons/icon-192.png">
 
     <title>{{ categoria }} - Recarga Veloz</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=3">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/membrete.css') }}">
 
 <style>
@@ -229,10 +229,16 @@
 
 
 
-    <header class="top-bar">
-            <a href="{{ url_for('index') }}" class="back-btn">← Volver</a>
-            <h1>{{ categoria }}</h1>
-            <a href="{{ url_for('carrito') }}" class="cart-btn">🛒 Carrito</a>
+    <header class="top-bar" style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin:6px 0 18px;padding:6px 0;">
+            <a href="{{ url_for('index') }}" class="back-btn"
+               style="display:inline-flex;align-items:center;gap:6px;background:linear-gradient(135deg,#e8f0fe,#c5daf8);color:#1a3c6e;text-decoration:none;font-weight:700;font-size:14px;padding:10px 16px;border-radius:30px;border:1px solid #a8c4ea;box-shadow:0 2px 8px rgba(26,60,110,0.15);">
+               ← Volver
+            </a>
+            <h1 style="color:#1a3c6e;font-size:24px;font-weight:800;margin:0;text-align:center;flex:1;">{{ categoria }}</h1>
+            <a href="{{ url_for('carrito') }}" class="cart-btn"
+               style="display:inline-flex;align-items:center;gap:6px;background:linear-gradient(135deg,#e85d04,#f48c06,#2a9d8f);color:#fff;text-decoration:none;font-weight:800;font-size:14px;padding:10px 16px;border-radius:30px;border:none;box-shadow:0 3px 12px rgba(232,93,4,0.4);">
+               🛒 Carrito
+            </a>
         </header>
 
         <div class="products-grid">
