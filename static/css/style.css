@@ -113,19 +113,60 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 25px;
-    padding: 10px 0;
+    gap: 10px;
+    margin-bottom: 20px;
+    padding: 8px 0;
 }
 
 .top-bar h1 {
     color: #1a3c6e;
     font-size: 24px;
+    font-weight: 800;
+    text-align: center;
+    flex: 1;
+    margin: 0;
 }
 
-.back-btn, .cart-btn {
-    color: #1a3c6e;
+.back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: linear-gradient(135deg, #e8f0fe 0%, #c5daf8 100%);
+    color: #1a3c6e !important;
     text-decoration: none;
-    font-weight: 600;
+    font-weight: 700;
+    font-size: 14px;
+    padding: 10px 16px;
+    border-radius: 30px;
+    border: 1px solid #a8c4ea;
+    box-shadow: 0 2px 8px rgba(26, 60, 110, 0.15);
+    white-space: nowrap;
+}
+
+.back-btn:hover {
+    background: linear-gradient(135deg, #d0e2fc 0%, #b0cef5 100%);
+    box-shadow: 0 4px 12px rgba(26, 60, 110, 0.22);
+}
+
+.cart-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: linear-gradient(135deg, #e85d04 0%, #f48c06 50%, #2a9d8f 100%);
+    color: #ffffff !important;
+    text-decoration: none;
+    font-weight: 800;
+    font-size: 14px;
+    padding: 10px 16px;
+    border-radius: 30px;
+    border: none;
+    box-shadow: 0 3px 12px rgba(232, 93, 4, 0.4);
+    white-space: nowrap;
+}
+
+.cart-btn:hover {
+    box-shadow: 0 5px 16px rgba(232, 93, 4, 0.5);
+    filter: brightness(1.05);
 }
 
 /* Productos */
