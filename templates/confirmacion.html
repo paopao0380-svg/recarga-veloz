@@ -2,95 +2,129 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
     <meta name="theme-color" content="#1a3c6e">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Recarga Veloz">
-    <link rel="manifest" href="/static/manifest.json">
-    <link rel="apple-touch-icon" href="/static/icons/icon-192.png">
-    <link rel="icon" type="image/png" sizes="192x192" href="/static/icons/icon-192.png">
-
     <title>Pedido Confirmado - Recarga Veloz</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/membrete.css') }}">
-
-<style>
-        .inst-header {
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=conf2">
+    <style>
+        body { margin: 0; background: #f0f4f8; min-height: 100vh; }
+        .page-wrap {
+            max-width: 560px;
+            margin: 0 auto;
+            padding: 12px 14px 28px;
+        }
+        .membrete-barra {
             display: flex;
             align-items: center;
-            justify-content: center;
-            gap: 8px;
-            padding: 10px 12px 6px;
-            margin-bottom: 6px;
+            gap: 12px;
+            background: linear-gradient(180deg, #f8fbff, #fff);
+            border: 1px solid #d0dbe8;
+            border-radius: 12px;
+            padding: 8px 14px;
+            margin: 0 0 18px;
+            box-sizing: border-box;
+            width: 100%;
         }
-        .inst-crest {
-            width: 28px;
-            height: 28px;
-            object-fit: contain;
-        }
-        .inst-name {
-            font-size: 12px;
-            color: #5a6a7a;
-            font-weight: 500;
-            letter-spacing: 0.2px;
-        }
-</style>
-
-    <style>
-        .membrete-barra {
-            display: flex !important;
-            align-items: center !important;
-            gap: 12px !important;
-            background: linear-gradient(180deg, #f8fbff 0%, #ffffff 100%) !important;
-            border: 1px solid #d0dbe8 !important;
-            border-left: none !important;
-            border-radius: 12px !important;
-            box-shadow: 0 1px 6px rgba(26, 60, 110, 0.06) !important;
-            padding: 8px 14px !important;
-            margin: 8px auto 16px !important;
-            max-width: 920px !important;
-            width: 100% !important;
-            box-sizing: border-box !important;
-        }
-        .membrete-barra .escudo {
-            width: 52px !important;
-            height: auto !important;
-            max-height: none !important;
-            object-fit: contain !important;
-            flex-shrink: 0 !important;
-        }
+        .membrete-barra .escudo { width: 48px; height: auto; flex-shrink: 0; }
         .membrete-barra .info { flex: 1; min-width: 0; line-height: 1.15; }
-        .membrete-barra .info .l1 { font-size: 11px; font-weight: 700; color: #1a3c6e; margin: 0; }
-        .membrete-barra .info .l2 { font-size: 13px; font-weight: 800; color: #1a3c6e; margin: 0; }
-        .membrete-barra .info .l3 { font-size: 10px; color: #5a6a7a; margin: 1px 0 0; }
-        .membrete-barra .info .l4 { font-size: 10px; color: #5a6a7a; margin: 0; }
-        .membrete-barra .info .l5 { font-size: 9px; color: #7a8a9a; margin: 0; }
+        .membrete-barra .l1 { font-size: 11px; font-weight: 700; color: #1a3c6e; }
+        .membrete-barra .l2 { font-size: 13px; font-weight: 800; color: #1a3c6e; }
+        .membrete-barra .l3, .membrete-barra .l4 { font-size: 10px; color: #5a6a7a; }
+        .membrete-barra .l5 { font-size: 9px; color: #7a8a9a; }
         .membrete-barra .sigla-wrap {
-            display: flex; align-items: center; flex-shrink: 0;
-            padding-left: 12px; border-left: 2px solid #c5d0e0;
+            border-left: 2px solid #c5d0e0;
+            padding-left: 12px;
+            flex-shrink: 0;
         }
         .membrete-barra .sigla {
-            font-size: 20px; font-weight: 900; color: #1a3c6e;
-            letter-spacing: 1.5px; line-height: 1;
+            font-size: 18px; font-weight: 900; color: #1a3c6e; letter-spacing: 1.5px;
         }
-        @media (max-width: 600px) {
-            .membrete-barra .escudo { width: 42px !important; }
-            .membrete-barra .info .l1 { font-size: 10px; }
-            .membrete-barra .info .l2 { font-size: 12px; }
+        .recibo-box {
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 4px 18px rgba(0,0,0,0.08);
+            padding: 22px 20px 20px;
+            text-align: center;
+        }
+        .ok-icon {
+            width: 56px; height: 56px; border-radius: 50%;
+            background: #28a745; color: #fff;
+            display: inline-flex; align-items: center; justify-content: center;
+            font-size: 28px; font-weight: 700; margin-bottom: 10px;
+        }
+        .recibo-box h1 {
+            margin: 0 0 6px;
+            font-size: 22px;
+            color: #222;
+        }
+        .numero-orden {
+            font-size: 28px;
+            font-weight: 800;
+            color: #1a3c6e;
+            margin: 8px 0 6px;
+            letter-spacing: 1px;
+        }
+        .hint {
+            color: #666;
+            font-size: 14px;
+            margin: 0 0 16px;
+        }
+        .detalle-tabla {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 0 0 12px;
+            text-align: left;
+            font-size: 14px;
+        }
+        .detalle-tabla th {
+            background: #f0f4f8;
+            color: #1a3c6e;
+            padding: 8px 10px;
+            font-weight: 700;
+            border-bottom: 2px solid #d0dbe8;
+        }
+        .detalle-tabla td {
+            padding: 8px 10px;
+            border-bottom: 1px solid #eef2f7;
+            color: #333;
+        }
+        .detalle-tabla .num { text-align: right; white-space: nowrap; }
+        .total-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 12px 0 18px;
+            padding: 12px 14px;
+            background: #e8f0fe;
+            border-radius: 10px;
+            font-weight: 800;
+            color: #1a3c6e;
+            font-size: 17px;
+        }
+        .btn-otro {
+            display: inline-block;
+            background: #28a745;
+            color: #fff !important;
+            text-decoration: none !important;
+            padding: 12px 28px;
+            border-radius: 30px;
+            font-weight: 700;
+            font-size: 15px;
+            box-shadow: 0 3px 10px rgba(40,167,69,0.35);
+        }
+        .btn-otro:hover { background: #218838; }
+        @media (max-width: 480px) {
+            .numero-orden { font-size: 24px; }
+            .detalle-tabla { font-size: 13px; }
             .membrete-barra .sigla { font-size: 15px; }
         }
     </style>
-
 </head>
 <body>
-    <div class="container center">
-
+    <div class="page-wrap">
+        <!-- Membrete superior -->
         <div class="membrete-barra">
-            <img class="escudo"
-                 src="{{ url_for('static', filename='icons/escudo.png') }}"
-                 alt="Escudo"
+            <img class="escudo" src="{{ url_for('static', filename='icons/escudo.png') }}" alt="Escudo"
                  onerror="this.src='{{ url_for('static', filename='icons/escudo.jpg') }}'">
             <div class="info">
                 <div class="l1">UNIDAD EDUCATIVA</div>
@@ -99,29 +133,45 @@
                 <div class="l4"><strong>AMIE:</strong> 07H00574</div>
                 <div class="l5">Panamericana sur entre vía Pasaje y Florentino Sáenz de Villaverde</div>
             </div>
-            <div class="sigla-wrap">
-                <div class="sigla">UEJMVI</div>
-            </div>
+            <div class="sigla-wrap"><div class="sigla">UEJMVI</div></div>
         </div>
 
-
-        <!-- Membrete institucional -->
-
-
-
-
-
-
-
-    <div class="success-box">
-            <div class="success-icon">✓</div>
+        <!-- Recibo -->
+        <div class="recibo-box">
+            <div class="ok-icon">✓</div>
             <h1>¡Pedido recibido!</h1>
-            <p class="order-number">{{ numero_orden }}</p>
-            <p class="instruction-text">Acércate al bar y menciona tu número de orden</p>
-            <a href="{{ url_for('index') }}" class="btn-add">Hacer otro pedido</a>
+            <div class="numero-orden">{{ numero_orden }}</div>
+            <p class="hint">Acércate al bar y menciona tu número de orden</p>
+
+            {% if items %}
+            <table class="detalle-tabla">
+                <thead>
+                    <tr>
+                        <th>Producto</th>
+                        <th class="num">Cant.</th>
+                        <th class="num">P. unit.</th>
+                        <th class="num">Subtotal</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for it in items %}
+                    <tr>
+                        <td>{{ it.nombre }}</td>
+                        <td class="num">{{ it.cantidad }}</td>
+                        <td class="num">${{ '%.2f'|format(it.precio) }}</td>
+                        <td class="num">${{ '%.2f'|format(it.subtotal) }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <div class="total-row">
+                <span>Total a pagar</span>
+                <span>${{ '%.2f'|format(total) }}</span>
+            </div>
+            {% endif %}
+
+            <a href="{{ url_for('index') }}" class="btn-otro">Hacer otro pedido</a>
         </div>
     </div>
-
-    <script src="/static/js/app.js"></script>
 </body>
 </html>
