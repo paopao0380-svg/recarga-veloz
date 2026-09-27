@@ -1,5 +1,5 @@
-
 flask
 flask-login
 gunicorn
 openpyxl
+psycopg2-binary
