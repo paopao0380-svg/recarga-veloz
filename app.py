@@ -300,20 +300,36 @@ def init_db():
 
         cursor.execute("""
             INSERT INTO productos (nombre, precio, imagen, categoria_id, stock, stock_minimo) VALUES 
-            ('Pollo a la Plancha', 4.50, 'https://images.unsplash.com/photo-1532550907401-a532f4bfec1f?w=400', 1, 20, 5),
-            ('Quinoa Bowl', 4.75, 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=400', 1, 15, 5),
-            ('Pescado al Horno', 5.25, 'https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=400', 1, 12, 5),
-            ('Wrap de Vegetales', 4.25, 'https://images.unsplash.com/photo-1626700051175-6818013e1d4f?w=400', 1, 18, 5),
-            ('Jugo Natural', 2.50, 'https://images.unsplash.com/photo-1622597467836-f3285f2131b8?w=400', 2, 30, 8),
-            ('Smoothie de Frutas', 3.00, 'https://images.unsplash.com/photo-1505252585461-04db1eb84625?w=400', 2, 25, 8),
-            ('Agua de Coco', 2.00, 'https://images.unsplash.com/photo-1556679343-c7306c1976bc?w=400', 2, 40, 10),
-            ('Yogurt con Granola', 2.75, 'https://images.unsplash.com/photo-1488477181946-6428a0291777?w=400', 3, 18, 5),
-            ('Ensalada de Frutas', 3.25, 'https://images.unsplash.com/photo-1564093497595-593b96bf6d7a?w=400', 3, 15, 5)
+            ('Pollo a la Plancha', 4.50, '/static/img/productos/pollo.jpg', 1, 20, 5),
+            ('Quinoa Bowl', 4.75, '/static/img/productos/quinoa.jpg', 1, 15, 5),
+            ('Pescado al Horno', 5.25, '/static/img/productos/pescado.jpg', 1, 12, 5),
+            ('Wrap de Vegetales', 4.25, '/static/img/productos/wrap.jpg', 1, 18, 5),
+            ('Jugo Natural', 2.50, '/static/img/productos/jugo.jpg', 2, 30, 8),
+            ('Smoothie de Frutas', 3.00, '/static/img/productos/smoothie.jpg', 2, 25, 8),
+            ('Agua de Coco', 2.00, '/static/img/productos/coco.jpg', 2, 40, 10),
+            ('Yogurt con Granola', 2.75, '/static/img/productos/yogurt.jpg', 3, 18, 5),
+            ('Ensalada de Frutas', 3.25, '/static/img/productos/frutas.jpg', 3, 15, 5)
         """)
 
         cursor.execute("INSERT INTO usuarios (nombre, usuario, password, rol) VALUES ('Administrador', 'admin', 'admin123', 'admin')")
         cursor.execute("INSERT INTO usuarios (nombre, usuario, password, rol) VALUES ('Cajero Bar', 'cajero', 'cajero123', 'cajero')")
         cursor.execute("INSERT INTO usuarios (nombre, usuario, password, rol) VALUES ('Contador', 'contador', 'contador123', 'contador')")
+
+    
+    # Imágenes locales (no dependen de internet externo)
+    image_map = {
+        "Pollo a la Plancha": "/static/img/productos/pollo.jpg",
+        "Quinoa Bowl": "/static/img/productos/quinoa.jpg",
+        "Pescado al Horno": "/static/img/productos/pescado.jpg",
+        "Wrap de Vegetales": "/static/img/productos/wrap.jpg",
+        "Jugo Natural": "/static/img/productos/jugo.jpg",
+        "Smoothie de Frutas": "/static/img/productos/smoothie.jpg",
+        "Agua de Coco": "/static/img/productos/coco.jpg",
+        "Yogurt con Granola": "/static/img/productos/yogurt.jpg",
+        "Ensalada de Frutas": "/static/img/productos/frutas.jpg",
+    }
+    for nombre, url in image_map.items():
+        cursor.execute("UPDATE productos SET imagen = ? WHERE nombre = ?", (url, nombre))
 
     conn.commit()
     conn.close()
