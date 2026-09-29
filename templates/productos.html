@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
     <meta name="theme-color" content="#1a3c6e">
     <title>{{ categoria }} - Recarga Veloz</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=nav9">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=img2">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/membrete.css') }}?v=2">
     <style>
         body { background: #f0f4f8; margin: 0; }
@@ -59,12 +59,17 @@
             transform: translateY(-4px);
             box-shadow: 0 8px 22px rgba(26,60,110,0.14);
         }
-        .product-card img {
+        .product-card .img-wrap {
+            width: 100%;
+            height: 150px;
+            background: #e8eef5;
+            overflow: hidden;
+        }
+        .product-card .img-wrap img {
             width: 100%;
             height: 150px;
             object-fit: cover;
             display: block;
-            background: #eef2f7;
         }
         .product-info { padding: 14px; text-align: center; }
         .product-info h3 { font-size: 15px; font-weight: 700; margin: 0 0 6px; color: #1a2a3a; }
@@ -92,7 +97,7 @@
     <div class="container">
         <div class="membrete-barra">
             <img class="escudo" src="{{ url_for('static', filename='icons/escudo.png') }}" alt="Escudo"
-                 onerror="this.src='{{ url_for('static', filename='icons/escudo.jpg') }}'">
+                 onerror="this.onerror=null;this.src='{{ url_for('static', filename='icons/escudo.jpg') }}'">
             <div class="info">
                 <div class="l1">UNIDAD EDUCATIVA</div>
                 <div class="l2">DR. JOSÉ MARÍA VELASCO IBARRA</div>
@@ -103,7 +108,6 @@
             <div class="sigla-wrap"><div class="sigla">UEJMVI</div></div>
         </div>
 
-        <!-- Barra de navegación: estilos INLINE para que siempre se vean -->
         <nav class="nav-productos">
             <a href="{{ url_for('index') }}"
                style="display:inline-flex;align-items:center;gap:6px;
@@ -113,9 +117,7 @@
                       white-space:nowrap;">
                 ← Volver
             </a>
-
             <h1>{{ categoria }}</h1>
-
             <a href="{{ url_for('carrito') }}"
                style="display:inline-flex;align-items:center;gap:6px;
                       background:linear-gradient(135deg,#e85d04,#f48c06);
@@ -130,8 +132,12 @@
         <div class="products-grid">
             {% for p in productos %}
             <div class="product-card">
-                <img src="{{ p.imagen }}" alt="{{ p.nombre }}"
-                     onerror="this.src='https://via.placeholder.com/300x150?text=Producto'">
+                <div class="img-wrap">
+                    <img src="{{ p.imagen }}"
+                         alt="{{ p.nombre }}"
+                         loading="lazy"
+                         onerror="this.onerror=null;this.src='{{ url_for('static', filename='img/placeholder.svg') }}';">
+                </div>
                 <div class="product-info">
                     <h3>{{ p.nombre }}</h3>
                     <p class="price">${{ '%.2f'|format(p.precio) }}</p>
