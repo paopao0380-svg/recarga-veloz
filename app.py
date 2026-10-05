@@ -355,7 +355,33 @@ def load_user(user_id):
 # -----------------------------
 @app.route("/")
 def index():
-    return render_template("index.html")
+    # Cantidad de ítems en el carrito (suma de cantidades)
+    cart_count = 0
+    if "carrito" in session and session["carrito"]:
+        cart_count = sum(session["carrito"].values())
+
+    # Productos destacados (más vendidos o muestra de menú)
+    destacados = []
+    try:
+        conn = get_db()
+        destacados = conn.execute("""
+            SELECT pr.id, pr.nombre, pr.precio, pr.imagen, COALESCE(SUM(d.cantidad), 0) as vendidos
+            FROM productos pr
+            LEFT JOIN detalle_pedidos d ON d.producto_id = pr.id
+            WHERE pr.activo = 1 AND pr.stock > 0
+            GROUP BY pr.id, pr.nombre, pr.precio, pr.imagen
+            ORDER BY vendidos DESC, pr.nombre
+            LIMIT 3
+        """).fetchall()
+        conn.close()
+    except Exception:
+        destacados = []
+
+    return render_template(
+        "index.html",
+        cart_count=cart_count,
+        destacados=destacados,
+    )
 
 @app.route("/categoria/<nombre>")
 def categoria(nombre):
