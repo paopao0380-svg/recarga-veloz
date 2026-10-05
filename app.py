@@ -293,6 +293,40 @@ def init_db():
         )
     """)
 
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS cuentas_saldo (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            codigo TEXT UNIQUE,
+            nombre TEXT,
+            pin TEXT,
+            saldo REAL DEFAULT 0
+        )
+    """)
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS movimientos_saldo (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            cuenta_id INTEGER,
+            tipo TEXT,
+            monto REAL,
+            detalle TEXT,
+            fecha TEXT
+        )
+    """)
+
+    # Columnas extra en pedidos (compatibles SQLite / Postgres)
+    extra_cols = [
+        ("metodo_pago", "TEXT"),
+        ("estado_pago", "TEXT"),
+        ("codigo_estudiante", "TEXT"),
+        ("nombre_cliente", "TEXT"),
+    ]
+    for col, typ in extra_cols:
+        try:
+            cursor.execute(f"ALTER TABLE pedidos ADD COLUMN {col} {typ}")
+        except Exception:
+            pass
+
     # Datos iniciales
     cursor.execute("SELECT COUNT(*) FROM categorias")
     if cursor.fetchone()[0] == 0:
@@ -330,6 +364,23 @@ def init_db():
     }
     for nombre, url in image_map.items():
         cursor.execute("UPDATE productos SET imagen = ? WHERE nombre = ?", (url, nombre))
+
+    # Cuenta demo para expo (estudiante)
+    try:
+        row = cursor.execute("SELECT COUNT(*) FROM cuentas_saldo").fetchone()
+        n = row[0] if row else 0
+        if n == 0:
+            cursor.execute(
+                "INSERT INTO cuentas_saldo (codigo, nombre, pin, saldo) VALUES (?, ?, ?, ?)",
+                ("EST001", "Estudiante Demo", "1234", 20.00),
+            )
+            cursor.execute(
+                "INSERT INTO cuentas_saldo (codigo, nombre, pin, saldo) VALUES (?, ?, ?, ?)",
+                ("EST002", "Estudiante Demo 2", "1234", 15.00),
+            )
+    except Exception:
+        pass
+
 
     conn.commit()
     conn.close()
@@ -458,10 +509,16 @@ def eliminar(producto_id):
 def confirmar():
     if "carrito" not in session or not session["carrito"]:
         return redirect(url_for("index"))
+
+    metodo_pago = (request.form.get("metodo_pago") or "bar").strip()
+    codigo_estudiante = (request.form.get("codigo_estudiante") or "").strip().upper()
+    pin = (request.form.get("pin") or "").strip()
+    nombre_cliente = (request.form.get("nombre_cliente") or "").strip()
+
     conn = get_db()
     ultimo = conn.execute("SELECT COUNT(*) FROM pedidos").fetchone()[0]
     numero_orden = f"RV-{ultimo + 1:04d}"
-    total = 0
+    total = 0.0
     items = []
     for pid, cantidad in session["carrito"].items():
         prod = conn.execute(
@@ -469,7 +526,7 @@ def confirmar():
         ).fetchone()
         if not prod:
             continue
-        subtotal = prod["precio"] * cantidad
+        subtotal = float(prod["precio"]) * cantidad
         total += subtotal
         items.append({
             "nombre": prod["nombre"],
@@ -477,9 +534,55 @@ def confirmar():
             "precio": prod["precio"],
             "subtotal": subtotal,
         })
+
+    estado_pago = "Pendiente de pago"
+    estado = "Pendiente"
+    mensaje_pago = "Paga en el bar al retirar tu pedido."
+
+    if metodo_pago == "saldo":
+        if not codigo_estudiante or not pin:
+            conn.close()
+            flash("Para pagar con saldo ingresa tu código de estudiante y PIN.", "error")
+            return redirect(url_for("carrito"))
+        cuenta = conn.execute(
+            "SELECT * FROM cuentas_saldo WHERE codigo = ?", (codigo_estudiante,)
+        ).fetchone()
+        if not cuenta or str(cuenta["pin"]) != str(pin):
+            conn.close()
+            flash("Código o PIN incorrectos.", "error")
+            return redirect(url_for("carrito"))
+        saldo_act = float(cuenta["saldo"] or 0)
+        if saldo_act < total:
+            conn.close()
+            flash(f"Saldo insuficiente. Tienes ${saldo_act:.2f} y el pedido es ${total:.2f}.", "error")
+            return redirect(url_for("carrito"))
+        # Descontar saldo
+        nuevo = saldo_act - total
+        conn.execute("UPDATE cuentas_saldo SET saldo = ? WHERE id = ?", (nuevo, cuenta["id"]))
+        conn.execute(
+            "INSERT INTO movimientos_saldo (cuenta_id, tipo, monto, detalle, fecha) VALUES (?, ?, ?, ?, ?)",
+            (cuenta["id"], "pago", total, f"Pedido {numero_orden}", datetime.now().strftime("%Y-%m-%d %H:%M")),
+        )
+        estado_pago = "Pagado"
+        estado = "Pendiente"
+        nombre_cliente = nombre_cliente or cuenta["nombre"]
+        mensaje_pago = f"Pagado con saldo. Nuevo saldo: ${nuevo:.2f}"
+    else:
+        metodo_pago = "bar"
+
     conn.execute(
-        "INSERT INTO pedidos (numero_orden, fecha, estado, total) VALUES (?, ?, ?, ?)",
-        (numero_orden, datetime.now().strftime("%Y-%m-%d %H:%M"), "Pendiente", total)
+        """INSERT INTO pedidos (numero_orden, fecha, estado, total, metodo_pago, estado_pago, codigo_estudiante, nombre_cliente)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+        (
+            numero_orden,
+            datetime.now().strftime("%Y-%m-%d %H:%M"),
+            estado,
+            total,
+            metodo_pago,
+            estado_pago,
+            codigo_estudiante or None,
+            nombre_cliente or None,
+        ),
     )
     pedido_id = conn.execute("SELECT last_insert_rowid()").fetchone()[0]
     for pid, cantidad in session["carrito"].items():
@@ -488,7 +591,7 @@ def confirmar():
             continue
         conn.execute(
             "INSERT INTO detalle_pedidos (pedido_id, producto_id, cantidad, precio_unitario) VALUES (?, ?, ?, ?)",
-            (pedido_id, pid, cantidad, prod["precio"])
+            (pedido_id, pid, cantidad, prod["precio"]),
         )
         conn.execute("UPDATE productos SET stock = stock - ? WHERE id = ?", (cantidad, pid))
     conn.commit()
@@ -499,11 +602,11 @@ def confirmar():
         numero_orden=numero_orden,
         items=items,
         total=total,
+        metodo_pago=metodo_pago,
+        estado_pago=estado_pago,
+        mensaje_pago=mensaje_pago,
     )
 
-# -----------------------------
-# Login
-# -----------------------------
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
@@ -546,11 +649,13 @@ def pedidos_bar():
     gc = sql_group_concat("pr.nombre || ' x' || d.cantidad")
     pedidos = conn.execute(f"""
         SELECT p.id, p.numero_orden, p.fecha, p.estado, p.total,
+               p.metodo_pago, p.estado_pago, p.codigo_estudiante, p.nombre_cliente,
                {gc} as productos
         FROM pedidos p
         LEFT JOIN detalle_pedidos d ON p.id = d.pedido_id
         LEFT JOIN productos pr ON d.producto_id = pr.id
-        GROUP BY p.id, p.numero_orden, p.fecha, p.estado, p.total
+        GROUP BY p.id, p.numero_orden, p.fecha, p.estado, p.total,
+                 p.metodo_pago, p.estado_pago, p.codigo_estudiante, p.nombre_cliente
         ORDER BY p.id DESC
         LIMIT 40
     """).fetchall()
@@ -566,6 +671,22 @@ def cambiar_estado(pedido_id, estado):
     conn.execute("UPDATE pedidos SET estado = ? WHERE id = ?", (estado, pedido_id))
     conn.commit()
     conn.close()
+    return redirect(url_for("pedidos_bar"))
+
+
+@app.route("/marcar-pagado/<int:pedido_id>")
+@login_required
+def marcar_pagado(pedido_id):
+    if current_user.rol not in ["cajero", "admin"]:
+        return redirect(url_for("index"))
+    conn = get_db()
+    conn.execute(
+        "UPDATE pedidos SET estado_pago = ? WHERE id = ?",
+        ("Pagado", pedido_id),
+    )
+    conn.commit()
+    conn.close()
+    flash("Pedido marcado como pagado.", "success")
     return redirect(url_for("pedidos_bar"))
 
 @app.route("/recibo/<int:pedido_id>")
@@ -702,6 +823,55 @@ def admin_ajustar_stock(id):
 # -----------------------------
 # Dashboard Contable
 # -----------------------------
+
+@app.route("/saldo", methods=["GET", "POST"])
+@login_required
+def gestionar_saldo():
+    """Recargar o crear cuentas de saldo (cajero/admin/contador)."""
+    if current_user.rol not in ["cajero", "admin", "contador"]:
+        return redirect(url_for("index"))
+    conn = get_db()
+    if request.method == "POST":
+        accion = request.form.get("accion") or "recargar"
+        codigo = (request.form.get("codigo") or "").strip().upper()
+        nombre = (request.form.get("nombre") or "").strip()
+        pin = (request.form.get("pin") or "1234").strip()
+        try:
+            monto = float(request.form.get("monto") or 0)
+        except ValueError:
+            monto = 0
+        if not codigo:
+            flash("Ingresa el código del estudiante.", "error")
+        elif accion == "crear":
+            existe = conn.execute("SELECT id FROM cuentas_saldo WHERE codigo = ?", (codigo,)).fetchone()
+            if existe:
+                flash("Ese código ya existe.", "error")
+            else:
+                conn.execute(
+                    "INSERT INTO cuentas_saldo (codigo, nombre, pin, saldo) VALUES (?, ?, ?, ?)",
+                    (codigo, nombre or codigo, pin, max(monto, 0)),
+                )
+                conn.commit()
+                flash(f"Cuenta {codigo} creada.", "success")
+        else:
+            cuenta = conn.execute("SELECT * FROM cuentas_saldo WHERE codigo = ?", (codigo,)).fetchone()
+            if not cuenta:
+                flash("No existe esa cuenta. Crea la cuenta primero.", "error")
+            elif monto <= 0:
+                flash("El monto debe ser mayor a 0.", "error")
+            else:
+                nuevo = float(cuenta["saldo"] or 0) + monto
+                conn.execute("UPDATE cuentas_saldo SET saldo = ? WHERE id = ?", (nuevo, cuenta["id"]))
+                conn.execute(
+                    "INSERT INTO movimientos_saldo (cuenta_id, tipo, monto, detalle, fecha) VALUES (?, ?, ?, ?, ?)",
+                    (cuenta["id"], "recarga", monto, "Recarga en bar", datetime.now().strftime("%Y-%m-%d %H:%M")),
+                )
+                conn.commit()
+                flash(f"Recarga OK. Nuevo saldo de {codigo}: ${nuevo:.2f}", "success")
+    cuentas = conn.execute("SELECT * FROM cuentas_saldo ORDER BY codigo").fetchall()
+    conn.close()
+    return render_template("saldo.html", cuentas=cuentas)
+
 @app.route("/contable")
 @login_required
 def dashboard_contable():
