@@ -97,7 +97,7 @@
             <img class="escudo"
                  src="{{ url_for('static', filename='icons/escudo.png') }}"
                  alt="Escudo"
-                 onerror="this.src='{{ url_for('static', filename='icons/escudo.jpg') }}'">
+                 onerror="this.onerror=null;this.src=\'data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='250' viewBox='0 0 400 250'%3E%3Crect fill='%23e8eef5' width='400' height='250'/%3E%3Ctext x='200' y='125' text-anchor='middle' fill='%231a3c6e' font-family='Arial' font-size='18' font-weight='600'%3ERecarga Veloz%3C/text%3E%3Ctext x='200' y='155' text-anchor='middle' fill='%237a8a9a' font-family='Arial' font-size='13'%3EComida saludable%3C/text%3E%3C/svg%3E\'">
             <div class="info">
                 <div class="l1">UNIDAD EDUCATIVA</div>
                 <div class="l2">DR. JOSÉ MARÍA VELASCO IBARRA</div>
@@ -157,13 +157,51 @@
 
         <div class="cart-summary">
             <h2>Total: ${{ '%.2f'|format(total) }}</h2>
-            <div class="cart-actions">
-                <a href="{{ url_for('index') }}" class="btn-seguir">+ Seguir comprando</a>
-                <form action="{{ url_for('confirmar') }}" method="POST">
+
+            <form action="{{ url_for('confirmar') }}" method="POST" class="pago-form" style="text-align:left;max-width:420px;margin:14px auto;background:#fff;border:1px solid #e0e8f0;border-radius:14px;padding:16px;">
+                <p style="margin:0 0 10px;font-weight:800;color:#1a3c6e;font-size:15px;">¿Cómo deseas pagar?</p>
+
+                <label style="display:flex;gap:10px;align-items:flex-start;margin-bottom:12px;cursor:pointer;">
+                    <input type="radio" name="metodo_pago" value="bar" checked style="margin-top:4px;" onchange="toggleSaldo(false)">
+                    <span>
+                        <strong>En el bar (efectivo / tarjeta)</strong><br>
+                        <small style="color:#666;">Pagas al retirar tu pedido</small>
+                    </span>
+                </label>
+
+                <label style="display:flex;gap:10px;align-items:flex-start;margin-bottom:12px;cursor:pointer;">
+                    <input type="radio" name="metodo_pago" value="saldo" style="margin-top:4px;" onchange="toggleSaldo(true)">
+                    <span>
+                        <strong>Con mi saldo Recarga Veloz</strong><br>
+                        <small style="color:#666;">Usa tu código de estudiante y PIN</small>
+                    </span>
+                </label>
+
+                <div id="saldo-fields" style="display:none;background:#f5f9ff;border-radius:10px;padding:12px;margin-bottom:12px;">
+                    <label style="display:block;font-size:13px;margin-bottom:6px;">Código estudiante
+                        <input type="text" name="codigo_estudiante" placeholder="Ej: EST001" style="width:100%;padding:8px;border:1px solid #c5d0e0;border-radius:8px;box-sizing:border-box;">
+                    </label>
+                    <label style="display:block;font-size:13px;margin-bottom:6px;">PIN
+                        <input type="password" name="pin" placeholder="PIN" style="width:100%;padding:8px;border:1px solid #c5d0e0;border-radius:8px;box-sizing:border-box;">
+                    </label>
+                    <p style="margin:6px 0 0;font-size:12px;color:#5a6a7a;">Demo expo: código <b>EST001</b> · PIN <b>1234</b></p>
+                </div>
+
+                <label style="display:block;font-size:13px;margin-bottom:12px;">Tu nombre (opcional)
+                    <input type="text" name="nombre_cliente" placeholder="Para que el cajero te identifique" style="width:100%;padding:8px;border:1px solid #c5d0e0;border-radius:8px;box-sizing:border-box;">
+                </label>
+
+                <div class="cart-actions" style="display:flex;flex-wrap:wrap;gap:10px;justify-content:center;">
+                    <a href="{{ url_for('index') }}" class="btn-seguir">+ Seguir comprando</a>
                     <button type="submit" class="btn-confirm">Confirmar Pedido</button>
-                </form>
-            </div>
+                </div>
+            </form>
         </div>
+        <script>
+            function toggleSaldo(show) {
+                document.getElementById('saldo-fields').style.display = show ? 'block' : 'none';
+            }
+        </script>
         {% else %}
         <div class="empty-cart">
             <p>Tu carrito está vacío</p>
