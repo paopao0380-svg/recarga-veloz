@@ -367,9 +367,10 @@ def init_db():
 
     # Cuenta demo para expo (estudiante)
     try:
-        row = cursor.execute("SELECT COUNT(*) FROM cuentas_saldo").fetchone()
+        cursor.execute("SELECT COUNT(*) FROM cuentas_saldo")
+        row = cursor.fetchone()
         n = row[0] if row else 0
-        if n == 0:
+        if int(n) == 0:
             cursor.execute(
                 "INSERT INTO cuentas_saldo (codigo, nombre, pin, saldo) VALUES (?, ?, ?, ?)",
                 ("EST001", "Estudiante Demo", "1234", 20.00),
@@ -378,8 +379,8 @@ def init_db():
                 "INSERT INTO cuentas_saldo (codigo, nombre, pin, saldo) VALUES (?, ?, ?, ?)",
                 ("EST002", "Estudiante Demo 2", "1234", 15.00),
             )
-    except Exception:
-        pass
+    except Exception as _e:
+        print("AVISO seed saldo:", _e)
 
 
     conn.commit()
@@ -1326,8 +1327,12 @@ def manifest():
     return app.send_static_file("manifest.json")
 
 # Inicializar BD al arrancar (local y en la nube)
-with app.app_context():
-    init_db()
+try:
+    with app.app_context():
+        init_db()
+except Exception as e:
+    # No tumbar el deploy si hay un error menor de migración
+    print("AVISO init_db:", e)
 
 
 @app.route("/admin/backup-db")
