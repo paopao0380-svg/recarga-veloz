@@ -179,6 +179,154 @@
             .category-card img { height: 140px !important; }
             .top-barra { min-height: 60px; margin: 0 6px; }
         }
+    
+        /* Fondo dinámico */
+        body {
+            background: linear-gradient(180deg, #eef3f9 0%, #f7f9fc 45%, #ffffff 100%) !important;
+            min-height: 100vh;
+        }
+        /* Animación de entrada */
+        .fade-in {
+            opacity: 0;
+            transform: translateY(12px);
+            animation: fadeUp 0.55s ease forwards;
+        }
+        @keyframes fadeUp {
+            to { opacity: 1; transform: translateY(0); }
+        }
+        /* Frase del día */
+        .frase-dia {
+            margin: 8px auto 0;
+            max-width: 420px;
+            font-family: 'Source Sans 3', system-ui, sans-serif;
+            font-size: clamp(13px, 2vw, 15px);
+            color: #3a5a7a;
+            font-weight: 600;
+            transition: opacity 0.28s ease;
+            min-height: 1.3em;
+        }
+        .horario-bar {
+            margin: 6px auto 0;
+            font-size: 12px;
+            color: #6a7a8a;
+            font-family: 'Source Sans 3', system-ui, sans-serif;
+        }
+        /* Categorías dinámicas */
+        .card-dyn {
+            display: block;
+            overflow: hidden;
+            border-radius: 16px;
+            transition: transform 0.22s ease, box-shadow 0.22s ease;
+            box-shadow: 0 4px 14px rgba(26,60,110,0.1);
+        }
+        .card-dyn:hover {
+            transform: translateY(-6px) scale(1.02);
+            box-shadow: 0 12px 28px rgba(26,60,110,0.18);
+        }
+        .card-img-wrap {
+            overflow: hidden;
+            height: 140px;
+            background: #e8eef5;
+        }
+        .card-img-wrap img {
+            width: 100%;
+            height: 140px;
+            object-fit: cover;
+            display: block;
+            transition: transform 0.35s ease;
+        }
+        .card-dyn:hover .card-img-wrap img {
+            transform: scale(1.08);
+        }
+        /* Badge carrito */
+        .link-carrito {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .badge-cart {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 22px;
+            height: 22px;
+            padding: 0 6px;
+            border-radius: 999px;
+            background: #e85d04;
+            color: #fff;
+            font-size: 12px;
+            font-weight: 800;
+            line-height: 1;
+        }
+        /* Destacados */
+        .destacados {
+            max-width: 900px;
+            margin: 18px auto 8px;
+            padding: 0 8px;
+        }
+        .destacados-title {
+            font-size: 16px;
+            color: #1a3c6e;
+            margin: 0 0 12px;
+            font-weight: 800;
+            text-align: center;
+        }
+        .destacados-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 12px;
+        }
+        .destacado-card {
+            background: #fff;
+            border-radius: 14px;
+            overflow: hidden;
+            border: 1px solid #e6eef6;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.06);
+            transition: transform 0.18s ease, box-shadow 0.18s ease;
+        }
+        .destacado-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 18px rgba(26,60,110,0.12);
+        }
+        .destacado-card img {
+            width: 100%;
+            height: 100px;
+            object-fit: cover;
+            display: block;
+            background: #e8eef5;
+        }
+        .destacado-info {
+            padding: 10px;
+            text-align: center;
+        }
+        .destacado-info h3 {
+            margin: 0 0 4px;
+            font-size: 13px;
+            color: #1a2a3a;
+            font-weight: 700;
+        }
+        .destacado-precio {
+            margin: 0 0 8px;
+            color: #1a3c6e;
+            font-weight: 800;
+            font-size: 15px;
+        }
+        .btn-destacado {
+            display: inline-block;
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: #fff !important;
+            text-decoration: none !important;
+            font-size: 12px;
+            font-weight: 700;
+            padding: 6px 14px;
+            border-radius: 20px;
+        }
+        @media (max-width: 600px) {
+            .card-img-wrap, .card-img-wrap img { height: 110px; }
+            .destacados { margin-top: 12px; }
+        }
+
     </style>
 </head>
 <body>
@@ -205,39 +353,100 @@
             </div>
         </div>
 
-        <div class="ornamento">
+        <div class="ornamento fade-in" style="animation-delay:0.05s">
             <img src="{{ url_for('static', filename='icons/separador.png') }}" alt="" style="width:min(300px,55%);max-width:300px;height:auto;display:block;margin:0 auto;opacity:0.8;">
         </div>
 
-        <header class="header">
+        <header class="header fade-in" style="animation-delay:0.1s">
             <h1 class="title" style="font-family:'Playfair Display',Georgia,serif;font-size:clamp(28px,5.5vw,48px);font-weight:800;color:#1a3c6e;letter-spacing:1.5px;margin:0;">RECARGA VELOZ</h1>
             <p class="slogan" style="font-family:'Cormorant Garamond',Georgia,serif;font-size:clamp(15px,2vw,18px);font-style:italic;color:#c41e3a;margin:4px 0 0;">Tu punto saludable</p>
+            <p id="frase-dia" class="frase-dia">Hoy es buen día para comer sano 🥗</p>
+            <p class="horario-bar">🕐 Bar escolar · Lun–Vie 07:30 – 13:30</p>
         </header>
 
-        <div class="instruction" style="font-size:15px;padding:10px 18px;margin:0 auto 14px;">
+        <div class="instruction fade-in" style="animation-delay:0.15s;font-size:15px;padding:10px 18px;margin:0 auto 14px;">
             Selecciona la categoría de alimentos que deseas comprar
         </div>
 
-        <div class="categories">
-            <a href="{{ url_for('categoria', nombre='Sólidos') }}" class="category-card">
-                <img src="https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=500&h=350&fit=crop" alt="Sólidos">
+        <div class="categories fade-in" style="animation-delay:0.2s">
+            <a href="{{ url_for('categoria', nombre='Sólidos') }}" class="category-card card-dyn">
+                <div class="card-img-wrap">
+                    <img src="{{ url_for('static', filename='img/productos/pescado.jpg') }}"
+                         alt="Sólidos"
+                         onerror="this.onerror=null;this.src='{{ url_for('static', filename='img/placeholder.svg') }}'">
+                </div>
                 <div class="category-title solidos">SÓLIDOS</div>
             </a>
-            <a href="{{ url_for('categoria', nombre='Bebidas') }}" class="category-card">
-                <img src="https://images.unsplash.com/photo-1622597467836-f3285f2131b8?w=500&h=350&fit=crop" alt="Bebidas">
+            <a href="{{ url_for('categoria', nombre='Bebidas') }}" class="category-card card-dyn">
+                <div class="card-img-wrap">
+                    <img src="{{ url_for('static', filename='img/productos/smoothie.jpg') }}"
+                         alt="Bebidas"
+                         onerror="this.onerror=null;this.src='{{ url_for('static', filename='img/placeholder.svg') }}'">
+                </div>
                 <div class="category-title bebidas">BEBIDAS</div>
             </a>
-            <a href="{{ url_for('categoria', nombre='Postres') }}" class="category-card">
-                <img src="https://images.unsplash.com/photo-1488477181946-6428a0291777?w=500&h=350&fit=crop" alt="Postres">
+            <a href="{{ url_for('categoria', nombre='Postres') }}" class="category-card card-dyn">
+                <div class="card-img-wrap">
+                    <img src="{{ url_for('static', filename='img/productos/frutas.jpg') }}"
+                         alt="Postres"
+                         onerror="this.onerror=null;this.src='{{ url_for('static', filename='img/placeholder.svg') }}'">
+                </div>
                 <div class="category-title postres">POSTRES</div>
             </a>
         </div>
 
-        <div class="footer-links">
-            <a href="{{ url_for('carrito') }}">🛒 Ver Carrito</a>
+        {% if destacados %}
+        <section class="destacados fade-in" style="animation-delay:0.28s">
+            <h2 class="destacados-title">⭐ Recomendados</h2>
+            <div class="destacados-grid">
+                {% for d in destacados %}
+                <div class="destacado-card">
+                    <img src="{{ d.imagen }}" alt="{{ d.nombre }}"
+                         onerror="this.onerror=null;this.src='{{ url_for('static', filename='img/placeholder.svg') }}'">
+                    <div class="destacado-info">
+                        <h3>{{ d.nombre }}</h3>
+                        <p class="destacado-precio">${{ '%.2f'|format(d.precio) }}</p>
+                        <a href="{{ url_for('agregar', producto_id=d.id) }}" class="btn-destacado">+ Agregar</a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+        {% endif %}
+
+        <div class="footer-links fade-in" style="animation-delay:0.35s">
+            <a href="{{ url_for('carrito') }}" class="link-carrito">
+                🛒 Ver Carrito
+                {% if cart_count and cart_count > 0 %}
+                <span class="badge-cart">{{ cart_count }}</span>
+                {% endif %}
+            </a>
             <a href="{{ url_for('login') }}">🔐 Personal</a>
         </div>
     </div>
+    <script>
+        // Frases rotativas
+        const frases = [
+            "Hoy es buen día para comer sano 🥗",
+            "Recarga tu energía entre clases ⚡",
+            "Elige bien, rinde más 💪",
+            "Comida saludable para tu mente y cuerpo 🌱",
+            "Tu recarga rápida y nutritiva 🍎",
+            "Pequeños hábitos, grandes resultados ✨"
+        ];
+        let fi = 0;
+        const el = document.getElementById("frase-dia");
+        if (el) {
+            setInterval(() => {
+                fi = (fi + 1) % frases.length;
+                el.style.opacity = "0";
+                setTimeout(() => {
+                    el.textContent = frases[fi];
+                    el.style.opacity = "1";
+                }, 280);
+            }, 4000);
+        }
+    </script>
     <script src="/static/js/app.js"></script>
 </body>
 </html>
