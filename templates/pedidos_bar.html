@@ -128,7 +128,7 @@
         </header>
 
         <p style="color:#666; margin-bottom:15px; font-size:14px;">
-            Revisa el pedido → Imprime el comprobante → Entrégalo al estudiante → Marca como entregado cuando retire en zona de retiros.
+            Revisa el pedido → Cobra / marca pagado → Imprime comprobante → Entrega en zona de retiros.<br><a href="{{ url_for('gestionar_saldo') }}" style="color:#1a3c6e;font-weight:700;">💳 Gestionar saldos de estudiantes</a>
         </p>
 
         <div class="orders-list">
@@ -140,10 +140,22 @@
                 </div>
                 <p class="order-products">{{ pedido.productos or 'Sin productos' }}</p>
                 <p class="order-total">Total: ${{ '%.2f'|format(pedido.total) }}</p>
-                <p class="order-status">Estado: <strong>{{ pedido.estado }}</strong></p>
+                {% if pedido.nombre_cliente %}<p>Cliente: <strong>{{ pedido.nombre_cliente }}</strong></p>{% endif %}
+                {% if pedido.codigo_estudiante %}<p>Código: <strong>{{ pedido.codigo_estudiante }}</strong></p>{% endif %}
+                <p class="order-status">Preparación: <strong>{{ pedido.estado }}</strong></p>
+                <p class="order-status">Pago:
+                    <strong style="color:{% if pedido.estado_pago == 'Pagado' %}#28a745{% else %}#c41e3a{% endif %};">
+                        {{ pedido.estado_pago or 'Pendiente de pago' }}
+                    </strong>
+                    · {{ 'Saldo' if pedido.metodo_pago == 'saldo' else 'En el bar' }}
+                </p>
 
                 <div class="order-actions">
                     <a href="{{ url_for('recibo', pedido_id=pedido.id) }}" class="btn-recibo" target="_blank">🖨 Imprimir comprobante</a>
+
+                    {% if pedido.estado_pago != 'Pagado' %}
+                        <a href="{{ url_for('marcar_pagado', pedido_id=pedido.id) }}" class="btn-status" style="background:#28a745;">Marcar pagado</a>
+                    {% endif %}
 
                     {% if pedido.estado == 'Pendiente' %}
                         <a href="{{ url_for('cambiar_estado', pedido_id=pedido.id, estado='En preparación') }}" class="btn-status">En preparación</a>
