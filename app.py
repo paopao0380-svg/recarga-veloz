@@ -420,6 +420,37 @@ def index():
         destacados=destacados,
     )
 
+
+@app.route("/consultar-saldo", methods=["GET", "POST"])
+def consultar_saldo():
+    """El estudiante consulta su saldo con código y PIN (sin login)."""
+    saldo = None
+    nombre = None
+    codigo_ok = None
+    if request.method == "POST":
+        codigo = (request.form.get("codigo") or "").strip().upper()
+        pin = (request.form.get("pin") or "").strip()
+        if not codigo or not pin:
+            flash("Ingresa tu código y PIN.", "error")
+        else:
+            conn = get_db()
+            cuenta = conn.execute(
+                "SELECT * FROM cuentas_saldo WHERE codigo = ?", (codigo,)
+            ).fetchone()
+            conn.close()
+            if not cuenta or str(cuenta["pin"]) != str(pin):
+                flash("Código o PIN incorrectos.", "error")
+            else:
+                saldo = float(cuenta["saldo"] or 0)
+                nombre = cuenta["nombre"]
+                codigo_ok = cuenta["codigo"]
+    return render_template(
+        "consultar_saldo.html",
+        saldo=saldo,
+        nombre=nombre,
+        codigo_ok=codigo_ok,
+    )
+
 @app.route("/categoria/<nombre>")
 def categoria(nombre):
     conn = get_db()
