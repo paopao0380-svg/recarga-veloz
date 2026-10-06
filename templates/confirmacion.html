@@ -144,7 +144,7 @@
             <p class="hint">Acércate al bar y menciona tu número de orden</p>
             {% if mensaje_pago %}<p class="hint" style="color:#1a3c6e;font-weight:600;">{{ mensaje_pago }}</p>{% endif %}
             {% if estado_pago %}<p class="hint">Estado de pago: <strong>{{ estado_pago }}</strong>
-            {% if metodo_pago == 'saldo' %}(Saldo Recarga Veloz){% else %}(Pago en el bar){% endif %}</p>{% endif %}
+            {% if metodo_pago == 'saldo' %}(Saldo Recarga Veloz){% else %}(Efectivo){% endif %}</p>{% endif %}
 
             {% if items %}
             <table class="detalle-tabla">
