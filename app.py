@@ -365,22 +365,7 @@ def init_db():
     for nombre, url in image_map.items():
         cursor.execute("UPDATE productos SET imagen = ? WHERE nombre = ?", (url, nombre))
 
-    # Cuenta demo para expo (estudiante)
-    try:
-        cursor.execute("SELECT COUNT(*) FROM cuentas_saldo")
-        row = cursor.fetchone()
-        n = row[0] if row else 0
-        if int(n) == 0:
-            cursor.execute(
-                "INSERT INTO cuentas_saldo (codigo, nombre, pin, saldo) VALUES (?, ?, ?, ?)",
-                ("EST001", "Estudiante Demo", "1234", 20.00),
-            )
-            cursor.execute(
-                "INSERT INTO cuentas_saldo (codigo, nombre, pin, saldo) VALUES (?, ?, ?, ?)",
-                ("EST002", "Estudiante Demo 2", "1234", 15.00),
-            )
-    except Exception as _e:
-        print("AVISO seed saldo:", _e)
+
 
 
     conn.commit()
@@ -828,50 +813,112 @@ def admin_ajustar_stock(id):
 @app.route("/saldo", methods=["GET", "POST"])
 @login_required
 def gestionar_saldo():
-    """Recargar o crear cuentas de saldo (cajero/admin/contador)."""
+    """Crear, recargar, editar o eliminar cuentas de saldo."""
     if current_user.rol not in ["cajero", "admin", "contador"]:
         return redirect(url_for("index"))
     conn = get_db()
+
     if request.method == "POST":
-        accion = request.form.get("accion") or "recargar"
+        accion = (request.form.get("accion") or "recargar").strip()
         codigo = (request.form.get("codigo") or "").strip().upper()
         nombre = (request.form.get("nombre") or "").strip()
-        pin = (request.form.get("pin") or "1234").strip()
+        pin = (request.form.get("pin") or "").strip()
+        cuenta_id = request.form.get("cuenta_id")
         try:
             monto = float(request.form.get("monto") or 0)
         except ValueError:
-            monto = 0
-        if not codigo:
-            flash("Ingresa el código del estudiante.", "error")
+            monto = 0.0
+
+        if accion == "vaciar_todo":
+            conn.execute("DELETE FROM movimientos_saldo")
+            conn.execute("DELETE FROM cuentas_saldo")
+            conn.commit()
+            flash("Todas las cuentas de estudiantes fueron eliminadas.", "success")
+        elif accion == "eliminar":
+            if cuenta_id:
+                conn.execute("DELETE FROM movimientos_saldo WHERE cuenta_id = ?", (cuenta_id,))
+                conn.execute("DELETE FROM cuentas_saldo WHERE id = ?", (cuenta_id,))
+                conn.commit()
+                flash("Estudiante eliminado.", "success")
+            else:
+                flash("No se pudo eliminar.", "error")
+        elif accion == "editar":
+            if not cuenta_id:
+                flash("Cuenta no válida.", "error")
+            elif not codigo:
+                flash("El código es obligatorio.", "error")
+            else:
+                # Evitar código duplicado en otra cuenta
+                otra = conn.execute(
+                    "SELECT id FROM cuentas_saldo WHERE codigo = ? AND id <> ?",
+                    (codigo, cuenta_id),
+                ).fetchone()
+                if otra:
+                    flash("Ese código ya pertenece a otro estudiante.", "error")
+                else:
+                    if pin:
+                        conn.execute(
+                            "UPDATE cuentas_saldo SET codigo = ?, nombre = ?, pin = ? WHERE id = ?",
+                            (codigo, nombre or codigo, pin, cuenta_id),
+                        )
+                    else:
+                        conn.execute(
+                            "UPDATE cuentas_saldo SET codigo = ?, nombre = ? WHERE id = ?",
+                            (codigo, nombre or codigo, cuenta_id),
+                        )
+                    conn.commit()
+                    flash("Datos del estudiante actualizados.", "success")
         elif accion == "crear":
-            existe = conn.execute("SELECT id FROM cuentas_saldo WHERE codigo = ?", (codigo,)).fetchone()
-            if existe:
-                flash("Ese código ya existe.", "error")
+            if not codigo:
+                flash("Ingresa el código del estudiante.", "error")
             else:
-                conn.execute(
-                    "INSERT INTO cuentas_saldo (codigo, nombre, pin, saldo) VALUES (?, ?, ?, ?)",
-                    (codigo, nombre or codigo, pin, max(monto, 0)),
-                )
-                conn.commit()
-                flash(f"Cuenta {codigo} creada.", "success")
-        else:
-            cuenta = conn.execute("SELECT * FROM cuentas_saldo WHERE codigo = ?", (codigo,)).fetchone()
-            if not cuenta:
-                flash("No existe esa cuenta. Crea la cuenta primero.", "error")
-            elif monto <= 0:
-                flash("El monto debe ser mayor a 0.", "error")
+                existe = conn.execute(
+                    "SELECT id FROM cuentas_saldo WHERE codigo = ?", (codigo,)
+                ).fetchone()
+                if existe:
+                    flash("Ese código ya existe.", "error")
+                else:
+                    pin_final = pin or "1234"
+                    conn.execute(
+                        "INSERT INTO cuentas_saldo (codigo, nombre, pin, saldo) VALUES (?, ?, ?, ?)",
+                        (codigo, nombre or codigo, pin_final, max(monto, 0)),
+                    )
+                    conn.commit()
+                    flash(f"Estudiante {codigo} registrado.", "success")
+        else:  # recargar
+            if not codigo:
+                flash("Ingresa el código del estudiante.", "error")
             else:
-                nuevo = float(cuenta["saldo"] or 0) + monto
-                conn.execute("UPDATE cuentas_saldo SET saldo = ? WHERE id = ?", (nuevo, cuenta["id"]))
-                conn.execute(
-                    "INSERT INTO movimientos_saldo (cuenta_id, tipo, monto, detalle, fecha) VALUES (?, ?, ?, ?, ?)",
-                    (cuenta["id"], "recarga", monto, "Recarga en bar", datetime.now().strftime("%Y-%m-%d %H:%M")),
-                )
-                conn.commit()
-                flash(f"Recarga OK. Nuevo saldo de {codigo}: ${nuevo:.2f}", "success")
+                cuenta = conn.execute(
+                    "SELECT * FROM cuentas_saldo WHERE codigo = ?", (codigo,)
+                ).fetchone()
+                if not cuenta:
+                    flash("No existe esa cuenta. Regístrala primero.", "error")
+                elif monto <= 0:
+                    flash("El monto debe ser mayor a 0.", "error")
+                else:
+                    nuevo = float(cuenta["saldo"] or 0) + monto
+                    conn.execute(
+                        "UPDATE cuentas_saldo SET saldo = ? WHERE id = ?",
+                        (nuevo, cuenta["id"]),
+                    )
+                    conn.execute(
+                        "INSERT INTO movimientos_saldo (cuenta_id, tipo, monto, detalle, fecha) VALUES (?, ?, ?, ?, ?)",
+                        (
+                            cuenta["id"],
+                            "recarga",
+                            monto,
+                            "Recarga en bar",
+                            datetime.now().strftime("%Y-%m-%d %H:%M"),
+                        ),
+                    )
+                    conn.commit()
+                    flash(f"Recarga OK. Nuevo saldo de {codigo}: ${nuevo:.2f}", "success")
+
     cuentas = conn.execute("SELECT * FROM cuentas_saldo ORDER BY codigo").fetchall()
     conn.close()
     return render_template("saldo.html", cuentas=cuentas)
+
 
 @app.route("/contable")
 @login_required
