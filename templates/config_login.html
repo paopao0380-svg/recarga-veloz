@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configuración del sistema - Recarga Veloz</title>
+    <style>
+        body {
+            margin: 0; min-height: 100vh;
+            background: linear-gradient(180deg, #e8eef5 0%, #f5f7fa 50%, #fff 100%);
+            font-family: system-ui, -apple-system, sans-serif;
+        }
+        .wrap { max-width: 400px; margin: 0 auto; padding: 24px 16px; }
+        .back {
+            display: inline-block; color: #1a3c6e; font-weight: 700;
+            text-decoration: none; margin-bottom: 18px;
+        }
+        .card {
+            background: #fff; border-radius: 18px; padding: 28px 22px;
+            box-shadow: 0 8px 24px rgba(26,60,110,0.12);
+            border: 1px solid #d0dbe8; text-align: center;
+        }
+        .gear {
+            width: 64px; height: 64px; margin: 0 auto 12px;
+            border-radius: 50%; background: linear-gradient(135deg, #1a3c6e, #2a6fb5);
+            color: #fff; font-size: 32px; display: flex; align-items: center;
+            justify-content: center; line-height: 1;
+        }
+        h1 { margin: 0 0 6px; color: #1a3c6e; font-size: 20px; }
+        .sub { color: #6a7a8a; font-size: 13px; margin: 0 0 18px; }
+        label { display: block; text-align: left; font-size: 13px; font-weight: 700; margin-bottom: 12px; color: #334; }
+        input {
+            width: 100%; padding: 12px; border: 1px solid #c5d0e0; border-radius: 12px;
+            box-sizing: border-box; margin-top: 6px; font-size: 16px;
+        }
+        button {
+            width: 100%; margin-top: 8px; border: none; padding: 14px; border-radius: 14px;
+            background: linear-gradient(135deg, #1a3c6e, #2a6fb5); color: #fff;
+            font-weight: 800; font-size: 15px; cursor: pointer;
+        }
+        .flash { background: #fdecea; color: #8a1f2e; padding: 10px; border-radius: 10px; margin-bottom: 12px; font-size: 13px; text-align: left; }
+    </style>
+</head>
+<body>
+<div class="wrap">
+    <a class="back" href="/">← Volver al inicio</a>
+    <div class="card">
+        <div class="gear">⚙</div>
+        <h1>Configuración del sistema</h1>
+        <p class="sub">Acceso exclusivo del Administrador del Sistema</p>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for cat, msg in messages %}
+              <div class="flash">{{ msg }}</div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+
+        <form method="POST" action="/config">
+            <label>Usuario
+                <input type="text" name="usuario" required autocomplete="username" placeholder="Usuario administrador">
+            </label>
+            <label>Contraseña
+                <input type="password" name="password" required autocomplete="current-password" placeholder="Contraseña">
+            </label>
+            <button type="submit">Entrar a configuración</button>
+        </form>
+    </div>
+</div>
+</body>
+</html>
