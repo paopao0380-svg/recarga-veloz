@@ -139,6 +139,7 @@
             <div class="admin-actions">
                 <a href="{{ url_for('admin_nuevo_producto') }}" class="btn-add">+ Nuevo Producto</a>
                 <a href="{{ url_for('dashboard_contable') }}" class="btn-small btn-edit">Panel Contable</a>
+                <a href="{{ url_for('admin_usuarios') }}" class="btn-small btn-edit">👥 Personal del sistema</a>
                 <a href="{{ url_for('pedidos_bar') }}" class="btn-small btn-edit">Ver Pedidos</a>
                 <a href="{{ url_for('logout') }}" class="btn-small" style="background:#dc3545; color:white;">Salir</a>
             </div>
@@ -197,5 +198,9 @@
     </div>
 
     <script src="/static/js/app.js"></script>
+
+    <div style="text-align:center;margin:16px 0 8px;font-size:13px;">
+        <a href="{{ url_for('backup_db') }}" style="color:#1a3c6e;font-weight:600;">💾 Descargar respaldo de datos</a>
+    </div>
 </body>
 </html>
