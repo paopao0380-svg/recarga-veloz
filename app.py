@@ -643,6 +643,7 @@ def confirmar():
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
+    """Acceso de personal operativo: Cajero y Contador."""
     if request.method == "POST":
         usuario = request.form.get("usuario")
         password = request.form.get("password")
@@ -653,17 +654,38 @@ def login():
         ).fetchone()
         conn.close()
         if user:
+            if user["rol"] == "admin":
+                flash("El Administrador del Sistema debe ingresar por Configuración (ícono ⚙).", "error")
+                return render_template("login.html")
             user_obj = User(user["id"], user["nombre"], user["usuario"], user["rol"])
             login_user(user_obj)
             if user["rol"] == "cajero":
                 return redirect(url_for("pedidos_bar"))
-            elif user["rol"] == "admin":
-                return redirect(url_for("admin_panel"))
-            elif user["rol"] == "contador":
+            if user["rol"] == "contador":
                 return redirect(url_for("dashboard_contable"))
             return redirect(url_for("index"))
         flash("Usuario o contraseña incorrectos", "error")
     return render_template("login.html")
+
+
+@app.route("/config", methods=["GET", "POST"])
+def config_login():
+    """Acceso exclusivo del Administrador del Sistema (configuración)."""
+    if request.method == "POST":
+        usuario = request.form.get("usuario")
+        password = request.form.get("password")
+        conn = get_db()
+        user = conn.execute(
+            "SELECT * FROM usuarios WHERE usuario = ? AND password = ?",
+            (usuario, password)
+        ).fetchone()
+        conn.close()
+        if user and user["rol"] == "admin":
+            user_obj = User(user["id"], user["nombre"], user["usuario"], user["rol"])
+            login_user(user_obj)
+            return redirect(url_for("admin_panel"))
+        flash("Solo el Administrador del Sistema puede entrar aquí.", "error")
+    return render_template("config_login.html")
 
 @app.route("/logout")
 @login_required
