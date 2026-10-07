@@ -671,21 +671,35 @@ def login():
 @app.route("/config", methods=["GET", "POST"])
 def config_login():
     """Acceso exclusivo del Administrador del Sistema (configuración)."""
-    if request.method == "POST":
-        usuario = request.form.get("usuario")
-        password = request.form.get("password")
-        conn = get_db()
-        user = conn.execute(
-            "SELECT * FROM usuarios WHERE usuario = ? AND password = ?",
-            (usuario, password)
-        ).fetchone()
-        conn.close()
-        if user and user["rol"] == "admin":
-            user_obj = User(user["id"], user["nombre"], user["usuario"], user["rol"])
-            login_user(user_obj)
-            return redirect(url_for("admin_panel"))
-        flash("Solo el Administrador del Sistema puede entrar aquí.", "error")
-    return render_template("config_login.html")
+    try:
+        if request.method == "POST":
+            usuario = (request.form.get("usuario") or "").strip()
+            password = (request.form.get("password") or "").strip()
+            conn = get_db()
+            user = conn.execute(
+                "SELECT * FROM usuarios WHERE usuario = ? AND password = ?",
+                (usuario, password)
+            ).fetchone()
+            conn.close()
+            rol = None
+            if user:
+                try:
+                    rol = user["rol"]
+                except Exception:
+                    rol = user[3] if len(user) > 3 else None
+            if user and rol == "admin":
+                user_obj = User(user["id"], user["nombre"], user["usuario"], user["rol"])
+                login_user(user_obj)
+                return redirect(url_for("admin_panel"))
+            flash("Solo el Administrador del Sistema puede entrar aquí.", "error")
+        return render_template("config_login.html")
+    except Exception as e:
+        # Evitar Internal Server Error opaco
+        return (
+            f"<h3>Configuración del sistema</h3>"
+            f"<p>Error temporal: {e}</p>"
+            f"<p><a href='/'>Volver al inicio</a></p>"
+        ), 500
 
 @app.route("/logout")
 @login_required
