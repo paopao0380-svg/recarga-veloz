@@ -345,9 +345,7 @@ def init_db():
             ('Ensalada de Frutas', 3.25, '/static/img/productos/frutas.jpg', 3, 15, 5)
         """)
 
-        cursor.execute("INSERT INTO usuarios (nombre, usuario, password, rol) VALUES ('Administrador', 'admin', 'admin123', 'admin')")
-        cursor.execute("INSERT INTO usuarios (nombre, usuario, password, rol) VALUES ('Cajero Bar', 'cajero', 'cajero123', 'cajero')")
-        cursor.execute("INSERT INTO usuarios (nombre, usuario, password, rol) VALUES ('Contador', 'contador', 'contador123', 'contador')")
+        cursor.execute("INSERT INTO usuarios (nombre, usuario, password, rol) VALUES ('Paolo', 'Paolo', 'loupao0320', 'admin')")
 
     
     # Imágenes locales (no dependen de internet externo)
@@ -367,6 +365,25 @@ def init_db():
 
 
 
+
+
+    # Asegurar cuenta administrador del sistema: Paolo
+    try:
+        cursor.execute("SELECT id FROM usuarios WHERE usuario = ?", ("Paolo",))
+        row = cursor.fetchone()
+        if row:
+            uid = row[0]
+            cursor.execute(
+                "UPDATE usuarios SET nombre = ?, password = ?, rol = ? WHERE id = ?",
+                ("Paolo", "loupao0320", "admin", uid),
+            )
+        else:
+            cursor.execute(
+                "INSERT INTO usuarios (nombre, usuario, password, rol) VALUES (?, ?, ?, ?)",
+                ("Paolo", "Paolo", "loupao0320", "admin"),
+            )
+    except Exception as _e:
+        print("AVISO admin Paolo:", _e)
 
     conn.commit()
     conn.close()
@@ -745,6 +762,81 @@ def admin_panel():
     """).fetchall()
     conn.close()
     return render_template("admin.html", productos=productos)
+
+
+@app.route("/admin/usuarios", methods=["GET", "POST"])
+@login_required
+def admin_usuarios():
+    """Gestionar personal del sistema: admin, cajero, contador."""
+    if current_user.rol != "admin":
+        return redirect(url_for("index"))
+    conn = get_db()
+
+    if request.method == "POST":
+        accion = (request.form.get("accion") or "crear").strip()
+        user_id = request.form.get("user_id")
+        nombre = (request.form.get("nombre") or "").strip()
+        usuario = (request.form.get("usuario") or "").strip().lower()
+        password = (request.form.get("password") or "").strip()
+        rol = (request.form.get("rol") or "cajero").strip()
+        if rol not in ("admin", "cajero", "contador"):
+            rol = "cajero"
+
+        if accion == "eliminar":
+            if user_id and str(user_id) == str(current_user.id):
+                flash("No puedes eliminar tu propia cuenta mientras estás conectado.", "error")
+            elif user_id:
+                conn.execute("DELETE FROM usuarios WHERE id = ?", (user_id,))
+                conn.commit()
+                flash("Usuario eliminado.", "success")
+            else:
+                flash("No se pudo eliminar.", "error")
+        elif accion == "editar":
+            if not user_id or not nombre or not usuario:
+                flash("Nombre y usuario son obligatorios.", "error")
+            else:
+                otra = conn.execute(
+                    "SELECT id FROM usuarios WHERE usuario = ? AND id <> ?",
+                    (usuario, user_id),
+                ).fetchone()
+                if otra:
+                    flash("Ese nombre de usuario ya existe.", "error")
+                else:
+                    if password:
+                        conn.execute(
+                            "UPDATE usuarios SET nombre = ?, usuario = ?, password = ?, rol = ? WHERE id = ?",
+                            (nombre, usuario, password, rol, user_id),
+                        )
+                    else:
+                        conn.execute(
+                            "UPDATE usuarios SET nombre = ?, usuario = ?, rol = ? WHERE id = ?",
+                            (nombre, usuario, rol, user_id),
+                        )
+                    conn.commit()
+                    flash("Usuario actualizado.", "success")
+        else:  # crear
+            if not nombre or not usuario or not password:
+                flash("Nombre, usuario y contraseña son obligatorios.", "error")
+            else:
+                existe = conn.execute(
+                    "SELECT id FROM usuarios WHERE usuario = ?", (usuario,)
+                ).fetchone()
+                if existe:
+                    flash("Ese nombre de usuario ya existe.", "error")
+                else:
+                    conn.execute(
+                        "INSERT INTO usuarios (nombre, usuario, password, rol) VALUES (?, ?, ?, ?)",
+                        (nombre, usuario, password, rol),
+                    )
+                    conn.commit()
+                    flash(f"Usuario {usuario} creado ({rol}).", "success")
+
+    usuarios = conn.execute(
+        "SELECT id, nombre, usuario, password, rol FROM usuarios ORDER BY rol, usuario"
+    ).fetchall()
+    conn.close()
+    return render_template("admin_usuarios.html", usuarios=usuarios)
+
 
 @app.route("/admin/producto/nuevo", methods=["GET", "POST"])
 @login_required
