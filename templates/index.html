@@ -356,6 +356,29 @@
             align-items: center;
         }
 
+    
+        .link-config {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background: #e8eef5;
+            color: #1a3c6e !important;
+            text-decoration: none !important;
+            font-size: 20px;
+            border: 1px solid #d0dbe8;
+            box-shadow: 0 2px 8px rgba(26,60,110,0.12);
+            transition: transform 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+        }
+        .link-config:hover {
+            transform: rotate(45deg) scale(1.08);
+            background: #1a3c6e;
+            color: #fff !important;
+            box-shadow: 0 4px 14px rgba(26,60,110,0.3);
+        }
+
     </style>
 </head>
 <body>
@@ -452,6 +475,7 @@
             </a>
             <a href="{{ url_for('consultar_saldo') }}" class="link-saldo">💰 Consultar saldo</a>
             <a href="{{ url_for('login') }}">🔐 Personal</a>
+            <a href="{{ url_for('config_login') }}" class="link-config" title="Configuración del sistema">⚙</a>
         </div>
     </div>
     <script>
