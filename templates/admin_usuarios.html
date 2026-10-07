@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Personal del sistema - Recarga Veloz</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        body { background: linear-gradient(180deg,#eef3f9,#f8fafc); margin:0; min-height:100vh; }
+        .wrap { max-width: 920px; margin: 0 auto; padding: 16px; }
+        .card { background:#fff; border-radius:16px; padding:18px; margin-bottom:16px;
+                box-shadow:0 4px 14px rgba(26,60,110,0.08); border:1px solid #e6eef6; }
+        h1 { color:#1a3c6e; font-size:22px; margin:0 0 6px; }
+        h2 { font-size:16px; color:#1a3c6e; margin:0 0 12px; }
+        .sub { color:#6a7a8a; font-size:13px; margin:0 0 14px; }
+        label { display:block; font-size:13px; margin-bottom:10px; font-weight:600; color:#334; }
+        input, select { width:100%; padding:10px 12px; border:1px solid #c5d0e0; border-radius:10px;
+                        box-sizing:border-box; margin-top:5px; font-size:14px; }
+        .row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+        @media (max-width:650px){ .row{ grid-template-columns:1fr; } }
+        .btn { border:none; padding:10px 16px; border-radius:12px; font-weight:800; cursor:pointer; font-size:13px; }
+        .btn-primary { background:linear-gradient(135deg,#1a3c6e,#2a6fb5); color:#fff; }
+        .btn-ok { background:linear-gradient(135deg,#28a745,#20c997); color:#fff; }
+        .btn-warn { background:#f0f4f8; color:#1a3c6e; border:1px solid #c5d0e0; }
+        .btn-danger { background:#c41e3a; color:#fff; }
+        .btn-sm { padding:7px 12px; font-size:12px; border-radius:8px; }
+        .nav a { margin-right:12px; color:#1a3c6e; font-weight:700; text-decoration:none; }
+        .flash { background:#e8f5e9; padding:10px 12px; border-radius:10px; margin-bottom:12px; font-size:14px; }
+        .flash-error { background:#fdecea; color:#8a1f2e; }
+        table { width:100%; border-collapse:collapse; font-size:14px; }
+        th, td { padding:10px 8px; border-bottom:1px solid #eef2f7; text-align:left; vertical-align:middle; }
+        th { color:#1a3c6e; font-size:13px; }
+        .badge { display:inline-block; padding:3px 10px; border-radius:20px; font-size:12px; font-weight:700; }
+        .b-admin { background:#e8eef8; color:#1a3c6e; }
+        .b-cajero { background:#e8f8ef; color:#1b6b3a; }
+        .b-contador { background:#fff4e5; color:#9a5b00; }
+        .actions { display:flex; flex-wrap:wrap; gap:6px; }
+        .edit-box { display:none; background:#f5f9ff; border:1px solid #d0dbe8; border-radius:12px; padding:12px; margin-top:8px; }
+        .edit-box.open { display:block; }
+        .pwd { font-family: ui-monospace, monospace; background:#f5f7fa; padding:2px 6px; border-radius:6px; }
+        .note { font-size:12px; color:#6a7a8a; margin-top:10px; }
+    </style>
+</head>
+<body>
+<div class="wrap">
+    <div class="nav" style="margin-bottom:12px;">
+        <a href="{{ url_for('admin_panel') }}">← Administración</a>
+        <a href="{{ url_for('index') }}">Inicio</a>
+        <a href="{{ url_for('logout') }}">Salir</a>
+    </div>
+
+    <h1>👥 Personal del sistema</h1>
+    <p class="sub">Agrega, modifica o elimina usuarios con acceso a Cajero, Administración o Contabilidad. Las contraseñas quedan registradas para consulta del administrador.</p>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for cat, msg in messages %}
+        <div class="flash {% if cat=='error' %}flash-error{% endif %}">{{ msg }}</div>
+      {% endfor %}
+    {% endwith %}
+
+    <div class="card">
+        <h2>Agregar personal</h2>
+        <form method="POST">
+            <input type="hidden" name="accion" value="crear">
+            <div class="row">
+                <label>Nombre completo
+                    <input name="nombre" required placeholder="Ej: María López">
+                </label>
+                <label>Usuario (para iniciar sesión)
+                    <input name="usuario" required placeholder="Ej: maria.lopez">
+                </label>
+            </div>
+            <div class="row">
+                <label>Contraseña
+                    <input name="password" required placeholder="Contraseña">
+                </label>
+                <label>Rol
+                    <select name="rol">
+                        <option value="cajero">Cajero</option>
+                        <option value="contador">Contador</option>
+                        <option value="admin">Administrador</option>
+                    </select>
+                </label>
+            </div>
+            <button type="submit" class="btn btn-primary">Registrar usuario</button>
+        </form>
+    </div>
+
+    <div class="card">
+        <h2>Usuarios registrados</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Nombre</th>
+                    <th>Usuario</th>
+                    <th>Contraseña</th>
+                    <th>Rol</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for u in usuarios %}
+                <tr>
+                    <td>{{ u.nombre }}</td>
+                    <td><strong>{{ u.usuario }}</strong></td>
+                    <td><span class="pwd">{{ u.password }}</span></td>
+                    <td>
+                        {% if u.rol == 'admin' %}
+                        <span class="badge b-admin">Administrador</span>
+                        {% elif u.rol == 'cajero' %}
+                        <span class="badge b-cajero">Cajero</span>
+                        {% else %}
+                        <span class="badge b-contador">Contador</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="actions">
+                            <button type="button" class="btn btn-warn btn-sm" onclick="toggleEdit('edit-{{ u.id }}')">Editar</button>
+                            <form method="POST" style="display:inline;" onsubmit="return confirm('¿Eliminar al usuario {{ u.usuario }}?');">
+                                <input type="hidden" name="accion" value="eliminar">
+                                <input type="hidden" name="user_id" value="{{ u.id }}">
+                                <button type="submit" class="btn btn-danger btn-sm">Eliminar</button>
+                            </form>
+                        </div>
+                        <div class="edit-box" id="edit-{{ u.id }}">
+                            <form method="POST">
+                                <input type="hidden" name="accion" value="editar">
+                                <input type="hidden" name="user_id" value="{{ u.id }}">
+                                <div class="row">
+                                    <label>Nombre
+                                        <input name="nombre" value="{{ u.nombre }}" required>
+                                    </label>
+                                    <label>Usuario
+                                        <input name="usuario" value="{{ u.usuario }}" required>
+                                    </label>
+                                </div>
+                                <div class="row">
+                                    <label>Nueva contraseña (vacío = no cambiar)
+                                        <input name="password" placeholder="••••••••">
+                                    </label>
+                                    <label>Rol
+                                        <select name="rol">
+                                            <option value="cajero" {% if u.rol=='cajero' %}selected{% endif %}>Cajero</option>
+                                            <option value="contador" {% if u.rol=='contador' %}selected{% endif %}>Contador</option>
+                                            <option value="admin" {% if u.rol=='admin' %}selected{% endif %}>Administrador</option>
+                                        </select>
+                                    </label>
+                                </div>
+                                <button type="submit" class="btn btn-ok btn-sm">Guardar cambios</button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+            {% else %}
+                <tr><td colspan="5">No hay usuarios registrados.</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        <p class="note">Solo el administrador puede ver y gestionar estas cuentas. Conserva las contraseñas en un lugar seguro del colegio.</p>
+    </div>
+</div>
+<script>
+function toggleEdit(id) {
+    document.getElementById(id).classList.toggle('open');
+}
+</script>
+</body>
+</html>
