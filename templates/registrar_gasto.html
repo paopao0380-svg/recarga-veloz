@@ -182,8 +182,16 @@
                     <input type="text" name="descripcion" required placeholder="Ej: Compra de frutas">
                 </div>
                 <div class="form-group">
+                    <label>Proveedor</label>
+                    <input type="text" name="proveedor" placeholder="Ej: Distribuidora El Guabo">
+                </div>
+                <div class="form-group">
+                    <label>Número de factura</label>
+                    <input type="text" name="numero_factura" placeholder="Ej: 001-001-0001234">
+                </div>
+                <div class="form-group">
                     <label>Monto ($)</label>
-                    <input type="number" step="0.01" name="monto" required>
+                    <input type="number" step="0.01" name="monto" required min="0.01">
                 </div>
                 <div class="form-group">
                     <label>Categoría</label>
