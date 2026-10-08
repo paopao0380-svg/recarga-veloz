@@ -44,13 +44,13 @@
 <body>
 <div class="wrap">
     <div class="nav" style="margin-bottom:12px;">
-        <a href="{{ url_for('admin_panel') }}">← Administración</a>
+        <a href="{{ url_for('index') }}">← Inicio</a>
         <a href="{{ url_for('index') }}">Inicio</a>
         <a href="{{ url_for('logout') }}">Salir</a>
     </div>
 
-    <h1>👥 Personal del sistema</h1>
-    <p class="sub">Agrega, modifica o elimina usuarios con acceso a Cajero, Administración o Contabilidad. Las contraseñas quedan registradas para consulta del administrador.</p>
+    <h1>⚙ Configuración del sistema</h1>
+    <p class="sub">Solo el Administrador del Sistema puede registrar personal. Agrega, modifica o elimina usuarios (Cajero, Administrador o Contador) y consulta sus claves. Un usuario solo podrá ingresar por <strong>Personal</strong> después de ser registrado aquí.</p>
 
     {% with messages = get_flashed_messages(with_categories=true) %}
       {% for cat, msg in messages %}
@@ -99,7 +99,7 @@
                 </tr>
             </thead>
             <tbody>
-            {% for u in usuarios %}
+            {% for u in usuarios if u.rol != "sistema" and (u.usuario|lower) != "paolo" %}
                 <tr>
                     <td>{{ u.nombre }}</td>
                     <td><strong>{{ u.usuario }}</strong></td>
