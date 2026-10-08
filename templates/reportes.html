@@ -264,18 +264,20 @@
             <h2>Detalle de gastos (egresos)</h2>
             <table>
                 <thead>
-                    <tr><th>Descripción</th><th>Categoría</th><th>Monto</th><th>Fecha</th></tr>
+                    <tr><th>Descripción</th><th>Proveedor</th><th>N° Factura</th><th>Categoría</th><th>Monto</th><th>Fecha</th></tr>
                 </thead>
                 <tbody>
                     {% for g in gastos_lista %}
                     <tr>
                         <td>{{ g.descripcion }}</td>
+                        <td>{{ g.proveedor or "—" }}</td>
+                        <td>{{ g.numero_factura or "—" }}</td>
                         <td>{{ g.categoria }}</td>
                         <td>${{ '%.2f'|format(g.monto) }}</td>
                         <td>{{ g.fecha }}</td>
                     </tr>
                     {% else %}
-                    <tr><td colspan="4">Sin gastos</td></tr>
+                    <tr><td colspan="6">Sin gastos</td></tr>
                     {% endfor %}
                 </tbody>
             </table>
