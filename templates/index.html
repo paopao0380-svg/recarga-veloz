@@ -360,35 +360,37 @@
         /* Tuerca de configuración: esquina inferior derecha */
         .fab-config {
             position: fixed;
-            right: 18px;
-            bottom: 18px;
+            right: 14px;
+            bottom: 14px;
             z-index: 9999;
             display: flex;
             align-items: center;
             justify-content: center;
-            width: 52px;
-            height: 52px;
+            width: 36px;
+            height: 36px;
             border-radius: 50%;
             background: linear-gradient(135deg, #1a3c6e 0%, #2a6fb5 100%);
             color: #fff !important;
             text-decoration: none !important;
-            font-size: 24px;
-            border: 2px solid #fff;
-            box-shadow: 0 4px 16px rgba(26, 60, 110, 0.35);
+            font-size: 16px;
+            border: 1.5px solid #fff;
+            box-shadow: 0 2px 10px rgba(26, 60, 110, 0.3);
             transition: transform 0.18s ease, box-shadow 0.18s ease;
             line-height: 1;
+            opacity: 0.92;
         }
         .fab-config:hover {
-            transform: rotate(45deg) scale(1.08);
-            box-shadow: 0 6px 20px rgba(26, 60, 110, 0.45);
+            transform: rotate(45deg) scale(1.1);
+            box-shadow: 0 4px 14px rgba(26, 60, 110, 0.4);
+            opacity: 1;
         }
         @media (max-width: 480px) {
             .fab-config {
-                right: 14px;
-                bottom: 14px;
-                width: 48px;
-                height: 48px;
-                font-size: 22px;
+                right: 12px;
+                bottom: 12px;
+                width: 32px;
+                height: 32px;
+                font-size: 14px;
             }
         }
 
