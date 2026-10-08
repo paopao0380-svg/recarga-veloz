@@ -327,6 +327,12 @@ def init_db():
         except Exception:
             pass
 
+    for col, typ in [("proveedor", "TEXT"), ("numero_factura", "TEXT")]:
+        try:
+            cursor.execute(f"ALTER TABLE gastos ADD COLUMN {col} {typ}")
+        except Exception:
+            pass
+
     # Datos iniciales
     cursor.execute("SELECT COUNT(*) FROM categorias")
     if cursor.fetchone()[0] == 0:
@@ -1231,20 +1237,39 @@ def dashboard_contable():
 @app.route("/contable/gasto", methods=["GET", "POST"])
 @login_required
 def registrar_gasto():
-    if current_user.rol not in ["contador", "admin"]:
+    if current_user.rol not in ["contador", "admin", "sistema"]:
         return redirect(url_for("index"))
     if request.method == "POST":
-        descripcion = request.form.get("descripcion")
-        monto = float(request.form.get("monto", 0))
-        categoria = request.form.get("categoria")
+        descripcion = (request.form.get("descripcion") or "").strip()
+        try:
+            monto = float(request.form.get("monto", 0))
+        except ValueError:
+            monto = 0
+        categoria = (request.form.get("categoria") or "Otros").strip()
+        proveedor = (request.form.get("proveedor") or "").strip()
+        numero_factura = (request.form.get("numero_factura") or "").strip()
         conn = get_db()
+        # Asegurar columnas en BD antigua
+        for col, typ in [("proveedor", "TEXT"), ("numero_factura", "TEXT")]:
+            try:
+                conn.execute(f"ALTER TABLE gastos ADD COLUMN {col} {typ}")
+                conn.commit()
+            except Exception:
+                pass
         conn.execute(
-            "INSERT INTO gastos (descripcion, monto, fecha, categoria) VALUES (?, ?, ?, ?)",
-            (descripcion, monto, datetime.now().strftime("%Y-%m-%d %H:%M"), categoria)
+            "INSERT INTO gastos (descripcion, monto, fecha, categoria, proveedor, numero_factura) VALUES (?, ?, ?, ?, ?, ?)",
+            (
+                descripcion,
+                monto,
+                datetime.now().strftime("%Y-%m-%d %H:%M"),
+                categoria,
+                proveedor or None,
+                numero_factura or None,
+            ),
         )
         conn.commit()
         conn.close()
-        flash("Gasto registrado", "success")
+        flash("Gasto registrado correctamente.", "success")
         return redirect(url_for("dashboard_contable"))
     return render_template("registrar_gasto.html")
 
@@ -1381,7 +1406,7 @@ def reportes_excel():
     """, (fecha_desde, fecha_hasta)).fetchall()
 
     gastos_lista = conn.execute(
-        "SELECT descripcion, categoria, monto, fecha FROM gastos WHERE substr(fecha, 1, 10) BETWEEN ? AND ? ORDER BY fecha",
+        "SELECT descripcion, categoria, proveedor, numero_factura, monto, fecha FROM gastos WHERE substr(fecha, 1, 10) BETWEEN ? AND ? ORDER BY fecha",
         (fecha_desde, fecha_hasta)
     ).fetchall()
 
@@ -1524,10 +1549,10 @@ def reportes_excel():
     ws3 = wb.create_sheet("Gastos (Egresos)")
     ws3["A1"] = "Detalle de Gastos / Egresos"
     ws3["A1"].font = title_font
-    headers = ["Descripción", "Categoría", "Monto ($)", "Fecha"]
+    headers = ["Descripción", "Categoría", "Proveedor", "N° Factura", "Monto ($)", "Fecha"]
     for i, h in enumerate(headers, 1):
         ws3.cell(row=3, column=i, value=h)
-    style_header_row(ws3, 3, 4)
+    style_header_row(ws3, 3, 6)
     for i, g in enumerate(gastos_lista, 4):
         for j, val in enumerate(g, 1):
             cell = ws3.cell(row=i, column=j, value=val if not isinstance(val, float) else round(val, 2))
