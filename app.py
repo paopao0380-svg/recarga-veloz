@@ -345,7 +345,7 @@ def init_db():
             ('Ensalada de Frutas', 3.25, '/static/img/productos/frutas.jpg', 3, 15, 5)
         """)
 
-        cursor.execute("INSERT INTO usuarios (nombre, usuario, password, rol) VALUES ('Paolo', 'Paolo', 'loupao0320', 'admin')")
+        cursor.execute("INSERT INTO usuarios (nombre, usuario, password, rol) VALUES ('Paolo', 'Paolo', 'loupao0320', 'sistema')")
 
     
     # Imágenes locales (no dependen de internet externo)
@@ -375,12 +375,12 @@ def init_db():
             uid = row[0]
             cursor.execute(
                 "UPDATE usuarios SET nombre = ?, usuario = ?, password = ?, rol = ? WHERE id = ?",
-                ("Paolo", "Paolo", "loupao0320", "admin", uid),
+                ("Paolo", "Paolo", "loupao0320", "sistema", uid),
             )
         else:
             cursor.execute(
                 "INSERT INTO usuarios (nombre, usuario, password, rol) VALUES (?, ?, ?, ?)",
-                ("Paolo", "Paolo", "loupao0320", "admin"),
+                ("Paolo", "Paolo", "loupao0320", "sistema"),
             )
     except Exception as _e:
         print("AVISO admin Paolo:", _e)
@@ -641,30 +641,53 @@ def confirmar():
         mensaje_pago=mensaje_pago,
     )
 
+
+def is_system_admin(user=None):
+    """True solo para el Administrador del Sistema (Paolo / rol sistema)."""
+    u = user or current_user
+    if not u or not getattr(u, "is_authenticated", True):
+        return False
+    try:
+        if str(getattr(u, "rol", "")).lower() == "sistema":
+            return True
+        if str(getattr(u, "usuario", "")).lower() == "paolo":
+            return True
+    except Exception:
+        pass
+    return False
+
+
 @app.route("/login", methods=["GET", "POST"])
 def login():
-    """Acceso de personal operativo: Cajero y Contador."""
+    """Acceso de personal: solo usuarios creados por el Administrador del Sistema."""
     if request.method == "POST":
-        usuario = request.form.get("usuario")
-        password = request.form.get("password")
+        usuario = (request.form.get("usuario") or "").strip()
+        password = (request.form.get("password") or "").strip()
         conn = get_db()
         user = conn.execute(
-            "SELECT * FROM usuarios WHERE usuario = ? AND password = ?",
-            (usuario, password)
+            "SELECT * FROM usuarios WHERE LOWER(usuario) = LOWER(?) AND password = ?",
+            (usuario, password),
         ).fetchone()
         conn.close()
         if user:
-            if user["rol"] == "admin":
+            rol = str(user["rol"]).lower()
+            # Administrador del Sistema solo por la tuerca
+            if rol == "sistema" or str(user["usuario"]).lower() == "paolo":
                 flash("El Administrador del Sistema debe ingresar por Configuración (ícono ⚙).", "error")
+                return render_template("login.html")
+            if rol not in ("admin", "cajero", "contador"):
+                flash("Tu cuenta no tiene un rol válido. Contacta al Administrador del Sistema.", "error")
                 return render_template("login.html")
             user_obj = User(user["id"], user["nombre"], user["usuario"], user["rol"])
             login_user(user_obj)
-            if user["rol"] == "cajero":
+            if rol == "cajero":
                 return redirect(url_for("pedidos_bar"))
-            if user["rol"] == "contador":
+            if rol == "contador":
                 return redirect(url_for("dashboard_contable"))
+            if rol == "admin":
+                return redirect(url_for("admin_panel"))
             return redirect(url_for("index"))
-        flash("Usuario o contraseña incorrectos", "error")
+        flash("Usuario o contraseña incorrectos. Solo pueden entrar usuarios registrados por el Administrador del Sistema.", "error")
     return render_template("login.html")
 
 
@@ -679,12 +702,12 @@ def _ensure_admin_paolo(conn):
             uid = row["id"] if hasattr(row, "keys") else row[0]
             conn.execute(
                 "UPDATE usuarios SET nombre = ?, usuario = ?, password = ?, rol = ? WHERE id = ?",
-                ("Paolo", "Paolo", "loupao0320", "admin", uid),
+                ("Paolo", "Paolo", "loupao0320", "sistema", uid),
             )
         else:
             conn.execute(
                 "INSERT INTO usuarios (nombre, usuario, password, rol) VALUES (?, ?, ?, ?)",
-                ("Paolo", "Paolo", "loupao0320", "admin"),
+                ("Paolo", "Paolo", "loupao0320", "sistema"),
             )
         conn.commit()
     except Exception as e:
@@ -736,13 +759,14 @@ def config_login():
                     except Exception:
                         rol = None
 
-            if user is not None and str(rol).lower() == "admin":
+            if user is not None and (str(rol).lower() == "sistema" or str(user["usuario"] if hasattr(user, "keys") else "").lower() == "paolo" or (usuario or "").lower() == "paolo"):
                 uid = user["id"] if hasattr(user, "keys") else user[0]
                 nombre = user["nombre"] if hasattr(user, "keys") else user[1]
                 usern = user["usuario"] if hasattr(user, "keys") else user[2]
-                user_obj = User(uid, nombre, usern, "admin")
+                # Forzar rol sistema para el encargado
+                user_obj = User(uid, nombre, usern, "sistema")
                 login_user(user_obj)
-                return redirect(url_for("admin_panel"))
+                return redirect(url_for("admin_usuarios"))
 
             flash("Usuario o contraseña incorrectos. Usa: Paolo / loupao0320", "error")
         return render_template("config_login.html")
@@ -855,8 +879,9 @@ def admin_panel():
 @app.route("/admin/usuarios", methods=["GET", "POST"])
 @login_required
 def admin_usuarios():
-    """Gestionar personal del sistema: admin, cajero, contador."""
-    if current_user.rol != "admin":
+    """Solo el Administrador del Sistema gestiona usuarios (Cajero, Admin, Contador)."""
+    if not is_system_admin():
+        flash("Solo el Administrador del Sistema puede gestionar usuarios.", "error")
         return redirect(url_for("index"))
     conn = get_db()
 
@@ -874,9 +899,13 @@ def admin_usuarios():
             if user_id and str(user_id) == str(current_user.id):
                 flash("No puedes eliminar tu propia cuenta mientras estás conectado.", "error")
             elif user_id:
-                conn.execute("DELETE FROM usuarios WHERE id = ?", (user_id,))
-                conn.commit()
-                flash("Usuario eliminado.", "success")
+                alvo = conn.execute("SELECT usuario, rol FROM usuarios WHERE id = ?", (user_id,)).fetchone()
+                if alvo and (str(alvo["rol"]).lower() == "sistema" or str(alvo["usuario"]).lower() == "paolo"):
+                    flash("No puedes eliminar al Administrador del Sistema.", "error")
+                else:
+                    conn.execute("DELETE FROM usuarios WHERE id = ?", (user_id,))
+                    conn.commit()
+                    flash("Usuario eliminado.", "success")
             else:
                 flash("No se pudo eliminar.", "error")
         elif accion == "editar":
