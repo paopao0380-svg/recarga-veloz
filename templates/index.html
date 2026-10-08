@@ -357,26 +357,39 @@
         }
 
     
-        .link-config {
-            display: inline-flex;
+        /* Tuerca de configuración: esquina inferior derecha */
+        .fab-config {
+            position: fixed;
+            right: 18px;
+            bottom: 18px;
+            z-index: 9999;
+            display: flex;
             align-items: center;
             justify-content: center;
-            width: 42px;
-            height: 42px;
+            width: 52px;
+            height: 52px;
             border-radius: 50%;
-            background: #e8eef5;
-            color: #1a3c6e !important;
-            text-decoration: none !important;
-            font-size: 20px;
-            border: 1px solid #d0dbe8;
-            box-shadow: 0 2px 8px rgba(26,60,110,0.12);
-            transition: transform 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
-        }
-        .link-config:hover {
-            transform: rotate(45deg) scale(1.08);
-            background: #1a3c6e;
+            background: linear-gradient(135deg, #1a3c6e 0%, #2a6fb5 100%);
             color: #fff !important;
-            box-shadow: 0 4px 14px rgba(26,60,110,0.3);
+            text-decoration: none !important;
+            font-size: 24px;
+            border: 2px solid #fff;
+            box-shadow: 0 4px 16px rgba(26, 60, 110, 0.35);
+            transition: transform 0.18s ease, box-shadow 0.18s ease;
+            line-height: 1;
+        }
+        .fab-config:hover {
+            transform: rotate(45deg) scale(1.08);
+            box-shadow: 0 6px 20px rgba(26, 60, 110, 0.45);
+        }
+        @media (max-width: 480px) {
+            .fab-config {
+                right: 14px;
+                bottom: 14px;
+                width: 48px;
+                height: 48px;
+                font-size: 22px;
+            }
         }
 
     </style>
@@ -475,8 +488,10 @@
             </a>
             <a href="{{ url_for('consultar_saldo') }}" class="link-saldo">💰 Consultar saldo</a>
             <a href="{{ url_for('login') }}">🔐 Personal</a>
-            <a href="{{ url_for('config_login') }}" class="link-config" title="Configuración del sistema">⚙</a>
         </div>
+
+        <a href="{{ url_for('config_login') }}" class="fab-config" title="Configuración del sistema" aria-label="Configuración del sistema">⚙</a>
+
     </div>
     <script>
         // Frases rotativas
