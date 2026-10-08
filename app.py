@@ -367,15 +367,15 @@ def init_db():
 
 
 
-    # Asegurar cuenta administrador del sistema: Paolo
+    # Asegurar cuenta administrador del sistema: Paolo / loupao0320
     try:
-        cursor.execute("SELECT id FROM usuarios WHERE usuario = ?", ("Paolo",))
+        cursor.execute("SELECT id FROM usuarios WHERE LOWER(usuario) = LOWER(?)", ("Paolo",))
         row = cursor.fetchone()
         if row:
             uid = row[0]
             cursor.execute(
-                "UPDATE usuarios SET nombre = ?, password = ?, rol = ? WHERE id = ?",
-                ("Paolo", "loupao0320", "admin", uid),
+                "UPDATE usuarios SET nombre = ?, usuario = ?, password = ?, rol = ? WHERE id = ?",
+                ("Paolo", "Paolo", "loupao0320", "admin", uid),
             )
         else:
             cursor.execute(
@@ -668,6 +668,29 @@ def login():
     return render_template("login.html")
 
 
+def _ensure_admin_paolo(conn):
+    """Crea o actualiza la cuenta Paolo / loupao0320 como admin."""
+    try:
+        row = conn.execute(
+            "SELECT id FROM usuarios WHERE LOWER(usuario) = LOWER(?)",
+            ("Paolo",),
+        ).fetchone()
+        if row:
+            uid = row["id"] if hasattr(row, "keys") else row[0]
+            conn.execute(
+                "UPDATE usuarios SET nombre = ?, usuario = ?, password = ?, rol = ? WHERE id = ?",
+                ("Paolo", "Paolo", "loupao0320", "admin", uid),
+            )
+        else:
+            conn.execute(
+                "INSERT INTO usuarios (nombre, usuario, password, rol) VALUES (?, ?, ?, ?)",
+                ("Paolo", "Paolo", "loupao0320", "admin"),
+            )
+        conn.commit()
+    except Exception as e:
+        print("AVISO _ensure_admin_paolo:", e)
+
+
 @app.route("/config", methods=["GET", "POST"])
 def config_login():
     """Acceso exclusivo del Administrador del Sistema (configuración)."""
@@ -675,26 +698,55 @@ def config_login():
         if request.method == "POST":
             usuario = (request.form.get("usuario") or "").strip()
             password = (request.form.get("password") or "").strip()
+
             conn = get_db()
+            # Asegurar que exista la cuenta Paolo
+            _ensure_admin_paolo(conn)
+
+            # Búsqueda sin distinguir mayúsculas en el usuario
             user = conn.execute(
-                "SELECT * FROM usuarios WHERE usuario = ? AND password = ?",
-                (usuario, password)
+                "SELECT * FROM usuarios WHERE LOWER(usuario) = LOWER(?) AND password = ?",
+                (usuario, password),
             ).fetchone()
+
+            # Si aún no, permitir admin antiguo con la nueva clave
+            if not user and password == "loupao0320":
+                user = conn.execute(
+                    "SELECT * FROM usuarios WHERE rol = ? AND password = ?",
+                    ("admin", password),
+                ).fetchone()
+
+            if not user and password == "loupao0320" and usuario.lower() == "paolo":
+                # último recurso: forzar cuenta y volver a buscar
+                _ensure_admin_paolo(conn)
+                user = conn.execute(
+                    "SELECT * FROM usuarios WHERE LOWER(usuario) = LOWER(?) AND password = ?",
+                    ("Paolo", "loupao0320"),
+                ).fetchone()
+
             conn.close()
+
             rol = None
-            if user:
+            if user is not None:
                 try:
                     rol = user["rol"]
                 except Exception:
-                    rol = user[3] if len(user) > 3 else None
-            if user and rol == "admin":
-                user_obj = User(user["id"], user["nombre"], user["usuario"], user["rol"])
+                    try:
+                        rol = user[4]  # id, nombre, usuario, password, rol?
+                    except Exception:
+                        rol = None
+
+            if user is not None and str(rol).lower() == "admin":
+                uid = user["id"] if hasattr(user, "keys") else user[0]
+                nombre = user["nombre"] if hasattr(user, "keys") else user[1]
+                usern = user["usuario"] if hasattr(user, "keys") else user[2]
+                user_obj = User(uid, nombre, usern, "admin")
                 login_user(user_obj)
                 return redirect(url_for("admin_panel"))
-            flash("Solo el Administrador del Sistema puede entrar aquí.", "error")
+
+            flash("Usuario o contraseña incorrectos. Usa: Paolo / loupao0320", "error")
         return render_template("config_login.html")
     except Exception as e:
-        # Evitar Internal Server Error opaco
         return (
             f"<h3>Configuración del sistema</h3>"
             f"<p>Error temporal: {e}</p>"
