@@ -250,18 +250,18 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% for g in ultimos_gastos|default([]) %}
+                                                            {% for g in ultimos_gastos|default([]) %}
                     <tr>
                         <td>{{ g.fecha }}</td>
                         <td>{{ g.descripcion }}</td>
-                        <td>{{ g.cantidad if g.cantidad is not none else "—" }}</td>
-                        <td>{{ g.unidad or "—" }}</td>
+                        <td>{% if g.cantidad is not none %}{{ g.cantidad }}{% else %}—{% endif %}</td>
+                        <td>{{ g.unidad }}</td>
                         <td>{% if g.precio_unitario is not none %}${{ '%.2f'|format(g.precio_unitario) }}{% else %}—{% endif %}</td>
                         <td>{% if g.subtotal is not none %}${{ '%.2f'|format(g.subtotal) }}{% else %}—{% endif %}</td>
                         <td>{% if g.iva is not none %}${{ '%.2f'|format(g.iva) }}{% else %}—{% endif %}</td>
-                        <td><strong>{% if g.total is not none %}${{ '%.2f'|format(g.total) }}{% else %}${{ '%.2f'|format(g.monto) }}{% endif %}</strong></td>
-                        <td>{{ g.proveedor or "—" }}</td>
-                        <td>{{ g.numero_factura or "—" }}</td>
+                        <td><strong>${{ '%.2f'|format(g.total) }}</strong></td>
+                        <td>{{ g.proveedor }}</td>
+                        <td>{{ g.numero_factura }}</td>
                     </tr>
                     {% else %}
                     <tr><td colspan="10">No hay gastos registrados</td></tr>
