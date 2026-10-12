@@ -1176,6 +1176,66 @@ def gestionar_saldo():
     return render_template("saldo.html", cuentas=cuentas)
 
 
+
+def normalize_gasto(row):
+    """Convierte fila de gasto a dict seguro para plantillas."""
+    if row is None:
+        return {}
+    def get(k, default=None):
+        try:
+            if hasattr(row, "get"):
+                v = row.get(k, default) if isinstance(row, dict) else default
+            else:
+                v = default
+            if v is None and hasattr(row, "__getitem__"):
+                try:
+                    v = row[k]
+                except Exception:
+                    v = default
+            return default if v is None else v
+        except Exception:
+            return default
+    # también attr
+    def gat(k, default=None):
+        try:
+            return getattr(row, k)
+        except Exception:
+            return get(k, default)
+
+    monto = gat("monto", 0) or 0
+    try:
+        monto = float(monto)
+    except Exception:
+        monto = 0.0
+    total = gat("total", None)
+    try:
+        total = float(total) if total is not None else monto
+    except Exception:
+        total = monto
+    def fnum(k):
+        v = gat(k, None)
+        try:
+            return float(v) if v is not None else None
+        except Exception:
+            return None
+    return {
+        "id": gat("id"),
+        "fecha": gat("fecha") or "—",
+        "descripcion": gat("descripcion") or "—",
+        "cantidad": fnum("cantidad"),
+        "unidad": gat("unidad") or "—",
+        "precio_unitario": fnum("precio_unitario"),
+        "subtotal": fnum("subtotal"),
+        "iva": fnum("iva"),
+        "total": total,
+        "monto": monto,
+        "proveedor": gat("proveedor") or "—",
+        "numero_factura": gat("numero_factura") or "—",
+        "categoria": gat("categoria") or "—",
+        "grava_iva": gat("grava_iva", 0),
+    }
+
+
 @app.route("/contable")
 @login_required
 def dashboard_contable():
@@ -1210,9 +1270,10 @@ def dashboard_contable():
         LIMIT 15
     """).fetchall()
     
-    ultimos_gastos = conn.execute(
-        "SELECT * FROM gastos ORDER BY id DESC LIMIT 10"
-    ).fetchall()
+    ultimos_gastos = [
+        normalize_gasto(r)
+        for r in conn.execute("SELECT * FROM gastos ORDER BY id DESC LIMIT 10").fetchall()
+    ]
     
     stock_bajo = conn.execute(
         "SELECT * FROM productos WHERE stock <= stock_minimo AND activo = 1"
@@ -1368,9 +1429,9 @@ def reportes_contable():
         ORDER BY p.fecha DESC
     """, (fecha_desde, fecha_hasta)).fetchall()
     
-    gastos_lista = conn.execute("""
+    gastos_lista = [normalize_gasto(r) for r in conn.execute("""
         SELECT * FROM gastos WHERE substr(fecha, 1, 10) BETWEEN ? AND ? ORDER BY fecha DESC
-    """, (fecha_desde, fecha_hasta)).fetchall()
+    """, (fecha_desde, fecha_hasta)).fetchall()]
     
     top_productos = conn.execute("""
         SELECT pr.nombre, c.nombre as categoria, SUM(d.cantidad) as total_vendido,
@@ -1451,10 +1512,10 @@ def reportes_excel():
         ORDER BY p.fecha
     """, (fecha_desde, fecha_hasta)).fetchall()
 
-    gastos_lista = conn.execute(
+    gastos_lista = [normalize_gasto(r) for r in conn.execute(
         "SELECT fecha, descripcion, cantidad, unidad, precio_unitario, subtotal, iva, total, proveedor, numero_factura, categoria FROM gastos WHERE substr(fecha, 1, 10) BETWEEN ? AND ? ORDER BY fecha",
         (fecha_desde, fecha_hasta)
-    ).fetchall()
+    ).fetchall()]
 
     top_productos = conn.execute("""
         SELECT pr.nombre, c.nombre, SUM(d.cantidad), SUM(d.cantidad * d.precio_unitario)
