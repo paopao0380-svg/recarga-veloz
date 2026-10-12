@@ -174,25 +174,67 @@
         <!-- Membrete (mismo estilo que Personal) -->
         </div>
 
-        <div class="form-box">
-            <h1>Registrar Gasto</h1>
-            <form method="POST">
-                <div class="form-group">
-                    <label>Descripción</label>
-                    <input type="text" name="descripcion" required placeholder="Ej: Compra de frutas">
+        <div class="form-box" style="max-width:720px;margin:0 auto;background:#fff;border-radius:16px;padding:22px 18px;box-shadow:0 4px 16px rgba(26,60,110,0.08);">
+            <h1 style="text-align:center;color:#1a3c6e;margin:0 0 6px;">Registrar Gasto</h1>
+            <p style="text-align:center;color:#6a7a8a;font-size:13px;margin:0 0 18px;">Detalle de compra · IVA 15% o 0% según el producto</p>
+
+            <form method="POST" id="form-gasto">
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                    <div class="form-group">
+                        <label>Proveedor</label>
+                        <input type="text" name="proveedor" placeholder="Ej: Distribuidora El Guabo">
+                    </div>
+                    <div class="form-group">
+                        <label>N° de factura</label>
+                        <input type="text" name="numero_factura" placeholder="Ej: 001-001-0001234">
+                    </div>
                 </div>
+
                 <div class="form-group">
-                    <label>Proveedor</label>
-                    <input type="text" name="proveedor" placeholder="Ej: Distribuidora El Guabo">
+                    <label>Fecha</label>
+                    <input type="date" name="fecha" id="fecha" required>
                 </div>
+
                 <div class="form-group">
-                    <label>Número de factura</label>
-                    <input type="text" name="numero_factura" placeholder="Ej: 001-001-0001234">
+                    <label>Descripción del producto</label>
+                    <input type="text" name="descripcion" required placeholder="Ej: Pollo fresco / Aceite / Vasos descartables">
                 </div>
+
+                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">
+                    <div class="form-group">
+                        <label>Cantidad</label>
+                        <input type="number" name="cantidad" id="cantidad" step="0.01" min="0.01" required value="1" oninput="calcular()">
+                    </div>
+                    <div class="form-group">
+                        <label>Unidad de medida</label>
+                        <select name="unidad" required>
+                            <option value="unidad">Unidad</option>
+                            <option value="kg">Kilogramo (kg)</option>
+                            <option value="lb">Libra (lb)</option>
+                            <option value="litro">Litro</option>
+                            <option value="caja">Caja</option>
+                            <option value="paquete">Paquete</option>
+                            <option value="docena">Docena</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Precio unitario ($)</label>
+                        <input type="number" name="precio_unitario" id="precio_unitario" step="0.01" min="0" required value="0" oninput="calcular()">
+                    </div>
+                </div>
+
                 <div class="form-group">
-                    <label>Monto ($)</label>
-                    <input type="number" step="0.01" name="monto" required min="0.01">
+                    <label>¿El producto grava IVA?</label>
+                    <select name="grava_iva" id="grava_iva" onchange="calcular()" style="width:100%;padding:10px;border:1px solid #c5d0e0;border-radius:10px;">
+                        <option value="0">No grava IVA (0%) — alimento en estado natural</option>
+                        <option value="1">Sí grava IVA (15%) — procesado / preparado / servicio</option>
+                    </select>
+                    <p style="font-size:12px;color:#6a7a8a;margin:6px 0 0;">
+                        <strong>0%:</strong> fruta, verdura, carne cruda, granos en estado natural.<br>
+                        <strong>15%:</strong> productos procesados, empaques, servicios, comida preparada.
+                    </p>
                 </div>
+
                 <div class="form-group">
                     <label>Categoría</label>
                     <select name="categoria" required>
@@ -202,13 +244,44 @@
                         <option value="Otros">Otros</option>
                     </select>
                 </div>
-                <div class="form-actions">
+
+                <div style="background:#f5f9ff;border:1px solid #d0dbe8;border-radius:12px;padding:14px;margin:14px 0;">
+                    <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+                        <span>Subtotal</span>
+                        <strong id="lbl-subtotal">$0.00</strong>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+                        <span>IVA 15%</span>
+                        <strong id="lbl-iva">$0.00</strong>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;border-top:1px solid #d0dbe8;padding-top:8px;font-size:17px;">
+                        <span><strong>Total</strong></span>
+                        <strong id="lbl-total" style="color:#1a3c6e;">$0.00</strong>
+                    </div>
+                </div>
+
+                <div class="form-actions" style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;">
                     <button type="submit" class="btn-save">Guardar Gasto</button>
                     <a href="{{ url_for('dashboard_contable') }}" class="btn-cancel">Cancelar</a>
                 </div>
             </form>
         </div>
     </div>
+    <script>
+        document.getElementById('fecha').valueAsDate = new Date();
+        function calcular() {
+            const cant = parseFloat(document.getElementById('cantidad').value) || 0;
+            const pu = parseFloat(document.getElementById('precio_unitario').value) || 0;
+            const grava = document.getElementById('grava_iva').value === '1';
+            const sub = Math.round(cant * pu * 100) / 100;
+            const iva = grava ? Math.round(sub * 0.15 * 100) / 100 : 0;
+            const tot = Math.round((sub + iva) * 100) / 100;
+            document.getElementById('lbl-subtotal').textContent = '$' + sub.toFixed(2);
+            document.getElementById('lbl-iva').textContent = '$' + iva.toFixed(2);
+            document.getElementById('lbl-total').textContent = '$' + tot.toFixed(2);
+        }
+        calcular();
+    </script>
     <script src="/static/js/app.js"></script>
 </body>
 </html>
