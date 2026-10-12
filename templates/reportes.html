@@ -264,20 +264,24 @@
             <h2>Detalle de gastos (egresos)</h2>
             <table>
                 <thead>
-                    <tr><th>Descripción</th><th>Proveedor</th><th>N° Factura</th><th>Categoría</th><th>Monto</th><th>Fecha</th></tr>
+                    <tr><th>Fecha</th><th>Descripción</th><th>Cant.</th><th>Unidad</th><th>P. Unit.</th><th>Subtotal</th><th>IVA</th><th>Total</th><th>Proveedor</th><th>Factura</th></tr>
                 </thead>
                 <tbody>
                     {% for g in gastos_lista %}
                     <tr>
+                        <td>{{ g.fecha }}</td>
                         <td>{{ g.descripcion }}</td>
+                        <td>{{ g.cantidad if g.cantidad is not none else "—" }}</td>
+                        <td>{{ g.unidad or "—" }}</td>
+                        <td>{% if g.precio_unitario is not none %}${{ '%.2f'|format(g.precio_unitario) }}{% else %}—{% endif %}</td>
+                        <td>{% if g.subtotal is not none %}${{ '%.2f'|format(g.subtotal) }}{% else %}—{% endif %}</td>
+                        <td>{% if g.iva is not none %}${{ '%.2f'|format(g.iva) }}{% else %}—{% endif %}</td>
+                        <td><strong>{% if g.total is not none %}${{ '%.2f'|format(g.total) }}{% else %}${{ '%.2f'|format(g.monto) }}{% endif %}</strong></td>
                         <td>{{ g.proveedor or "—" }}</td>
                         <td>{{ g.numero_factura or "—" }}</td>
-                        <td>{{ g.categoria }}</td>
-                        <td>${{ '%.2f'|format(g.monto) }}</td>
-                        <td>{{ g.fecha }}</td>
                     </tr>
                     {% else %}
-                    <tr><td colspan="6">Sin gastos</td></tr>
+                    <tr><td colspan="10">Sin gastos</td></tr>
                     {% endfor %}
                 </tbody>
             </table>
