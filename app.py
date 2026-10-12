@@ -1181,43 +1181,40 @@ def normalize_gasto(row):
     """Convierte fila de gasto a dict seguro para plantillas."""
     if row is None:
         return {}
-    def get(k, default=None):
-        try:
-            if hasattr(row, "get"):
-                v = row.get(k, default) if isinstance(row, dict) else default
-            else:
-                v = default
-            if v is None and hasattr(row, "__getitem__"):
-                try:
-                    v = row[k]
-                except Exception:
-                    v = default
-            return default if v is None else v
-        except Exception:
-            return default
-    # también attr
+
     def gat(k, default=None):
+        try:
+            if isinstance(row, dict) and k in row:
+                return row[k]
+        except Exception:
+            pass
+        try:
+            return row[k]
+        except Exception:
+            pass
         try:
             return getattr(row, k)
         except Exception:
-            return get(k, default)
+            return default
 
-    monto = gat("monto", 0) or 0
-    try:
-        monto = float(monto)
-    except Exception:
-        monto = 0.0
-    total = gat("total", None)
-    try:
-        total = float(total) if total is not None else monto
-    except Exception:
-        total = monto
     def fnum(k):
         v = gat(k, None)
+        if v is None:
+            return None
         try:
-            return float(v) if v is not None else None
+            return float(v)
         except Exception:
             return None
+
+    monto = fnum("monto") or 0.0
+    total = fnum("total")
+    if total is None:
+        total = monto
+    # IVA puede estar en columna iva o iva_monto
+    iva_val = fnum("iva_monto")
+    if iva_val is None:
+        iva_val = fnum("iva")
+
     return {
         "id": gat("id"),
         "fecha": gat("fecha") or "—",
@@ -1226,13 +1223,13 @@ def normalize_gasto(row):
         "unidad": gat("unidad") or "—",
         "precio_unitario": fnum("precio_unitario"),
         "subtotal": fnum("subtotal"),
-        "iva": fnum("iva"),
+        "iva": iva_val,
         "total": total,
         "monto": monto,
         "proveedor": gat("proveedor") or "—",
         "numero_factura": gat("numero_factura") or "—",
         "categoria": gat("categoria") or "—",
-        "grava_iva": gat("grava_iva", 0),
+        "grava_iva": gat("grava_iva", 0) or 0,
     }
 
 
@@ -1297,7 +1294,7 @@ def dashboard_contable():
         try:
             ultimos_gastos = [
                 normalize_gasto(r)
-                for r in conn.execute("SELECT * FROM gastos ORDER BY id DESC LIMIT 10").fetchall()
+                for r in conn.execute("SELECT * FROM gastos ORDER BY id DESC LIMIT 20").fetchall()
             ]
         except Exception as e:
             print("AVISO gastos contable:", e)
@@ -1358,6 +1355,7 @@ def registrar_gasto():
         return redirect(url_for("index"))
 
     if request.method == "POST":
+        conn = None
         try:
             descripcion = (request.form.get("descripcion") or "").strip()
             proveedor = (request.form.get("proveedor") or "").strip()
@@ -1387,22 +1385,22 @@ def registrar_gasto():
             if not descripcion:
                 flash("La descripción es obligatoria.", "error")
                 return render_template("registrar_gasto.html")
-            if cantidad <= 0 or precio_unitario < 0:
-                flash("Cantidad y precio deben ser válidos.", "error")
+            if cantidad <= 0:
+                flash("La cantidad debe ser mayor a 0.", "error")
                 return render_template("registrar_gasto.html")
 
             conn = get_db()
-            # Asegurar columnas (SQLite y Postgres)
+            num_type = "DOUBLE PRECISION" if USE_POSTGRES else "REAL"
             for col, typ in [
                 ("proveedor", "TEXT"),
                 ("numero_factura", "TEXT"),
-                ("cantidad", "DOUBLE PRECISION" if USE_POSTGRES else "REAL"),
+                ("cantidad", num_type),
                 ("unidad", "TEXT"),
-                ("precio_unitario", "DOUBLE PRECISION" if USE_POSTGRES else "REAL"),
-                ("subtotal", "DOUBLE PRECISION" if USE_POSTGRES else "REAL"),
+                ("precio_unitario", num_type),
+                ("subtotal", num_type),
                 ("grava_iva", "INTEGER"),
-                ("iva", "DOUBLE PRECISION" if USE_POSTGRES else "REAL"),
-                ("total", "DOUBLE PRECISION" if USE_POSTGRES else "REAL"),
+                ("iva_monto", num_type),  # evitar nombre problemático "iva"
+                ("total", num_type),
             ]:
                 try:
                     conn.execute(f"ALTER TABLE gastos ADD COLUMN {col} {typ}")
@@ -1410,36 +1408,92 @@ def registrar_gasto():
                 except Exception:
                     pass
 
-            conn.execute(
-                """INSERT INTO gastos
-                   (descripcion, monto, fecha, categoria, proveedor, numero_factura,
-                    cantidad, unidad, precio_unitario, subtotal, grava_iva, iva, total)
-                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-                (
-                    descripcion,
-                    float(total),
-                    fecha_full,
-                    categoria,
-                    proveedor if proveedor else None,
-                    numero_factura if numero_factura else None,
-                    float(cantidad),
-                    unidad,
-                    float(precio_unitario),
-                    float(subtotal),
-                    int(grava_iva),
-                    float(iva_val),
-                    float(total),
-                ),
-            )
-            conn.commit()
+            # Insertar (usar iva_monto; si falla, intentar sin columnas extra)
+            try:
+                conn.execute(
+                    """INSERT INTO gastos
+                       (descripcion, monto, fecha, categoria, proveedor, numero_factura,
+                        cantidad, unidad, precio_unitario, subtotal, grava_iva, iva_monto, total)
+                       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                    (
+                        descripcion,
+                        float(total),
+                        fecha_full,
+                        categoria,
+                        proveedor or None,
+                        numero_factura or None,
+                        float(cantidad),
+                        unidad,
+                        float(precio_unitario),
+                        float(subtotal),
+                        int(grava_iva),
+                        float(iva_val),
+                        float(total),
+                    ),
+                )
+                conn.commit()
+            except Exception as e1:
+                print("INSERT completo falló, reintento básico:", e1)
+                try:
+                    conn.execute(
+                        """INSERT INTO gastos (descripcion, monto, fecha, categoria, proveedor, numero_factura)
+                           VALUES (?, ?, ?, ?, ?, ?)""",
+                        (
+                            descripcion,
+                            float(total),
+                            fecha_full,
+                            categoria,
+                            proveedor or None,
+                            numero_factura or None,
+                        ),
+                    )
+                    conn.commit()
+                    # intentar completar columnas
+                    try:
+                        row = conn.execute(
+                            "SELECT id FROM gastos WHERE descripcion = ? AND fecha = ? ORDER BY id DESC",
+                            (descripcion, fecha_full),
+                        ).fetchone()
+                        if row:
+                            gid = row["id"] if hasattr(row, "keys") else row[0]
+                            conn.execute(
+                                """UPDATE gastos SET cantidad=?, unidad=?, precio_unitario=?, subtotal=?,
+                                   grava_iva=?, iva_monto=?, total=? WHERE id=?""",
+                                (
+                                    float(cantidad), unidad, float(precio_unitario),
+                                    float(subtotal), int(grava_iva), float(iva_val),
+                                    float(total), gid,
+                                ),
+                            )
+                            conn.commit()
+                    except Exception as e2:
+                        print("UPDATE extra falló:", e2)
+                except Exception as e3:
+                    raise e3
+
+            # Verificar que quedó guardado
+            check = conn.execute(
+                "SELECT id, descripcion, monto, total, iva_monto, grava_iva FROM gastos ORDER BY id DESC LIMIT 1"
+            ).fetchone()
             conn.close()
-            flash("Gasto registrado correctamente.", "success")
+            conn = None
+
+            if check:
+                desc = check["descripcion"] if hasattr(check, "keys") else check[1]
+                flash(
+                    f"Gasto guardado: {desc} · Total ${total:.2f}"
+                    + (f" (IVA ${iva_val:.2f})" if grava_iva else " (sin IVA)"),
+                    "success",
+                )
+            else:
+                flash("Gasto registrado.", "success")
             return redirect(url_for("dashboard_contable"))
         except Exception as e:
-            try:
-                conn.close()
-            except Exception:
-                pass
+            if conn is not None:
+                try:
+                    conn.close()
+                except Exception:
+                    pass
             flash(f"No se pudo guardar el gasto: {e}", "error")
             return render_template("registrar_gasto.html")
 
