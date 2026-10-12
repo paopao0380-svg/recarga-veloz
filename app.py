@@ -1239,71 +1239,116 @@ def normalize_gasto(row):
 @app.route("/contable")
 @login_required
 def dashboard_contable():
-    if current_user.rol not in ["contador", "admin"]:
+    if current_user.rol not in ["contador", "admin", "sistema"]:
         return redirect(url_for("index"))
-    conn = get_db()
-    
-    hoy = datetime.now().strftime("%Y-%m-%d")
-    ventas_hoy = conn.execute(
-        "SELECT COALESCE(SUM(total), 0) as total, COUNT(*) as cantidad FROM pedidos WHERE fecha LIKE ?",
-        (hoy + "%",)
-    ).fetchone()
-    
-    gastos_hoy = conn.execute(
-        "SELECT COALESCE(SUM(monto), 0) as total FROM gastos WHERE fecha LIKE ?",
-        (hoy + "%",)
-    ).fetchone()
-    
-    # Últimos pedidos CON productos y categorías
-    gc_prod = sql_group_concat("pr.nombre || ' x' || d.cantidad")
-    gc_cat = sql_group_concat("c.nombre")
-    ultimos_pedidos = conn.execute(f"""
-        SELECT p.id, p.numero_orden, p.fecha, p.estado, p.total,
-               {gc_prod} as productos,
-               {gc_cat} as categorias
-        FROM pedidos p
-        LEFT JOIN detalle_pedidos d ON p.id = d.pedido_id
-        LEFT JOIN productos pr ON d.producto_id = pr.id
-        LEFT JOIN categorias c ON pr.categoria_id = c.id
-        GROUP BY p.id, p.numero_orden, p.fecha, p.estado, p.total
-        ORDER BY p.id DESC
-        LIMIT 15
-    """).fetchall()
-    
-    ultimos_gastos = [
-        normalize_gasto(r)
-        for r in conn.execute("SELECT * FROM gastos ORDER BY id DESC LIMIT 10").fetchall()
-    ]
-    
-    stock_bajo = conn.execute(
-        "SELECT * FROM productos WHERE stock <= stock_minimo AND activo = 1"
-    ).fetchall()
-    
-    # Top productos (para gráfico)
-    top_productos = conn.execute("""
-        SELECT pr.nombre, c.nombre as categoria, SUM(d.cantidad) as total_vendido
-        FROM detalle_pedidos d
-        JOIN productos pr ON d.producto_id = pr.id
-        LEFT JOIN categorias c ON pr.categoria_id = c.id
-        GROUP BY pr.id, pr.nombre, c.nombre
-        ORDER BY total_vendido DESC
-        LIMIT 8
-    """).fetchall()
-    
-    conn.close()
-    v_total = float(ventas_hoy["total"] or 0) if ventas_hoy else 0.0
-    g_total = float(gastos_hoy["total"] or 0) if gastos_hoy else 0.0
-    utilidad = v_total - g_total
-    
-    return render_template("contable.html",
+
+    ventas_hoy = {"total": 0.0, "cantidad": 0}
+    gastos_hoy = {"total": 0.0}
+    utilidad = 0.0
+    ultimos_pedidos = []
+    ultimos_gastos = []
+    stock_bajo = []
+    top_productos = []
+
+    try:
+        conn = get_db()
+        hoy = datetime.now().strftime("%Y-%m-%d")
+
+        row = conn.execute(
+            "SELECT COALESCE(SUM(total), 0) as total, COUNT(*) as cantidad FROM pedidos WHERE fecha LIKE ?",
+            (hoy + "%",),
+        ).fetchone()
+        if row:
+            ventas_hoy = {
+                "total": float(row["total"] or 0),
+                "cantidad": int(row["cantidad"] or 0),
+            }
+
+        row = conn.execute(
+            "SELECT COALESCE(SUM(monto), 0) as total FROM gastos WHERE fecha LIKE ?",
+            (hoy + "%",),
+        ).fetchone()
+        if row:
+            gastos_hoy = {"total": float(row["total"] or 0)}
+
+        utilidad = ventas_hoy["total"] - gastos_hoy["total"]
+
+        try:
+            gc_prod = sql_group_concat("pr.nombre || ' x' || d.cantidad")
+            gc_cat = sql_group_concat("c.nombre")
+            ultimos_pedidos = conn.execute(f"""
+                SELECT p.id, p.numero_orden, p.fecha, p.estado, p.total,
+                       {gc_prod} as productos,
+                       {gc_cat} as categorias
+                FROM pedidos p
+                LEFT JOIN detalle_pedidos d ON p.id = d.pedido_id
+                LEFT JOIN productos pr ON d.producto_id = pr.id
+                LEFT JOIN categorias c ON pr.categoria_id = c.id
+                GROUP BY p.id, p.numero_orden, p.fecha, p.estado, p.total
+                ORDER BY p.id DESC
+                LIMIT 15
+            """).fetchall()
+        except Exception as e:
+            print("AVISO pedidos contable:", e)
+            ultimos_pedidos = conn.execute(
+                "SELECT id, numero_orden, fecha, estado, total FROM pedidos ORDER BY id DESC LIMIT 15"
+            ).fetchall()
+
+        try:
+            ultimos_gastos = [
+                normalize_gasto(r)
+                for r in conn.execute("SELECT * FROM gastos ORDER BY id DESC LIMIT 10").fetchall()
+            ]
+        except Exception as e:
+            print("AVISO gastos contable:", e)
+            ultimos_gastos = []
+
+        try:
+            stock_bajo = conn.execute(
+                "SELECT * FROM productos WHERE stock <= stock_minimo AND activo = 1"
+            ).fetchall()
+        except Exception:
+            stock_bajo = []
+
+        try:
+            top_productos = conn.execute("""
+                SELECT pr.nombre, c.nombre as categoria, SUM(d.cantidad) as total_vendido
+                FROM detalle_pedidos d
+                JOIN productos pr ON d.producto_id = pr.id
+                LEFT JOIN categorias c ON pr.categoria_id = c.id
+                GROUP BY pr.id, pr.nombre, c.nombre
+                ORDER BY total_vendido DESC
+                LIMIT 8
+            """).fetchall()
+            # Asegurar números para el gráfico
+            top_productos = [
+                {
+                    "nombre": r["nombre"] if hasattr(r, "keys") else r[0],
+                    "categoria": (r["categoria"] if hasattr(r, "keys") else r[1]) or "",
+                    "total_vendido": float((r["total_vendido"] if hasattr(r, "keys") else r[2]) or 0),
+                }
+                for r in top_productos
+            ]
+        except Exception as e:
+            print("AVISO top productos:", e)
+            top_productos = []
+
+        conn.close()
+    except Exception as e:
+        print("ERROR dashboard_contable:", e)
+        flash("Error al cargar el panel contable.", "error")
+
+    return render_template(
+        "contable.html",
         ventas_hoy=ventas_hoy,
         gastos_hoy=gastos_hoy,
-        utilidad=utilidad,
+        utilidad=float(utilidad),
         ultimos_pedidos=ultimos_pedidos,
         ultimos_gastos=ultimos_gastos,
         stock_bajo=stock_bajo,
-        top_productos=top_productos
+        top_productos=top_productos,
     )
+
 
 @app.route("/contable/gasto", methods=["GET", "POST"])
 @login_required
@@ -1313,69 +1358,90 @@ def registrar_gasto():
         return redirect(url_for("index"))
 
     if request.method == "POST":
-        descripcion = (request.form.get("descripcion") or "").strip()
-        proveedor = (request.form.get("proveedor") or "").strip()
-        numero_factura = (request.form.get("numero_factura") or "").strip()
-        categoria = (request.form.get("categoria") or "Insumos").strip()
-        unidad = (request.form.get("unidad") or "unidad").strip()
-        fecha = (request.form.get("fecha") or "").strip()
-        if not fecha:
-            fecha = datetime.now().strftime("%Y-%m-%d")
-        # hora para ordenar
-        fecha_full = fecha + " " + datetime.now().strftime("%H:%M")
-
         try:
-            cantidad = float(request.form.get("cantidad") or 0)
-        except ValueError:
-            cantidad = 0.0
-        try:
-            precio_unitario = float(request.form.get("precio_unitario") or 0)
-        except ValueError:
-            precio_unitario = 0.0
+            descripcion = (request.form.get("descripcion") or "").strip()
+            proveedor = (request.form.get("proveedor") or "").strip()
+            numero_factura = (request.form.get("numero_factura") or "").strip()
+            categoria = (request.form.get("categoria") or "Insumos").strip()
+            unidad = (request.form.get("unidad") or "unidad").strip()
+            fecha = (request.form.get("fecha") or "").strip()
+            if not fecha:
+                fecha = datetime.now().strftime("%Y-%m-%d")
+            fecha_full = fecha + " " + datetime.now().strftime("%H:%M")
 
-        grava_iva = 1 if (request.form.get("grava_iva") or "") in ("1", "si", "on", "15") else 0
-        subtotal = round(cantidad * precio_unitario, 2)
-        iva = round(subtotal * 0.15, 2) if grava_iva else 0.0
-        total = round(subtotal + iva, 2)
-
-        conn = get_db()
-        for col, typ in [
-            ("proveedor", "TEXT"), ("numero_factura", "TEXT"),
-            ("cantidad", "REAL"), ("unidad", "TEXT"),
-            ("precio_unitario", "REAL"), ("subtotal", "REAL"),
-            ("grava_iva", "INTEGER"), ("iva", "REAL"), ("total", "REAL"),
-        ]:
             try:
-                conn.execute(f"ALTER TABLE gastos ADD COLUMN {col} {typ}")
-                conn.commit()
+                cantidad = float(request.form.get("cantidad") or 0)
+            except (TypeError, ValueError):
+                cantidad = 0.0
+            try:
+                precio_unitario = float(request.form.get("precio_unitario") or 0)
+            except (TypeError, ValueError):
+                precio_unitario = 0.0
+
+            grava_raw = (request.form.get("grava_iva") or "0").strip().lower()
+            grava_iva = 1 if grava_raw in ("1", "si", "sí", "on", "15", "true") else 0
+            subtotal = round(cantidad * precio_unitario, 2)
+            iva_val = round(subtotal * 0.15, 2) if grava_iva else 0.0
+            total = round(subtotal + iva_val, 2)
+
+            if not descripcion:
+                flash("La descripción es obligatoria.", "error")
+                return render_template("registrar_gasto.html")
+            if cantidad <= 0 or precio_unitario < 0:
+                flash("Cantidad y precio deben ser válidos.", "error")
+                return render_template("registrar_gasto.html")
+
+            conn = get_db()
+            # Asegurar columnas (SQLite y Postgres)
+            for col, typ in [
+                ("proveedor", "TEXT"),
+                ("numero_factura", "TEXT"),
+                ("cantidad", "DOUBLE PRECISION" if USE_POSTGRES else "REAL"),
+                ("unidad", "TEXT"),
+                ("precio_unitario", "DOUBLE PRECISION" if USE_POSTGRES else "REAL"),
+                ("subtotal", "DOUBLE PRECISION" if USE_POSTGRES else "REAL"),
+                ("grava_iva", "INTEGER"),
+                ("iva", "DOUBLE PRECISION" if USE_POSTGRES else "REAL"),
+                ("total", "DOUBLE PRECISION" if USE_POSTGRES else "REAL"),
+            ]:
+                try:
+                    conn.execute(f"ALTER TABLE gastos ADD COLUMN {col} {typ}")
+                    conn.commit()
+                except Exception:
+                    pass
+
+            conn.execute(
+                """INSERT INTO gastos
+                   (descripcion, monto, fecha, categoria, proveedor, numero_factura,
+                    cantidad, unidad, precio_unitario, subtotal, grava_iva, iva, total)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                (
+                    descripcion,
+                    float(total),
+                    fecha_full,
+                    categoria,
+                    proveedor if proveedor else None,
+                    numero_factura if numero_factura else None,
+                    float(cantidad),
+                    unidad,
+                    float(precio_unitario),
+                    float(subtotal),
+                    int(grava_iva),
+                    float(iva_val),
+                    float(total),
+                ),
+            )
+            conn.commit()
+            conn.close()
+            flash("Gasto registrado correctamente.", "success")
+            return redirect(url_for("dashboard_contable"))
+        except Exception as e:
+            try:
+                conn.close()
             except Exception:
                 pass
-
-        conn.execute(
-            """INSERT INTO gastos
-               (descripcion, monto, fecha, categoria, proveedor, numero_factura,
-                cantidad, unidad, precio_unitario, subtotal, grava_iva, iva, total)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-            (
-                descripcion,
-                total,  # monto = total (compatibilidad con sumas existentes)
-                fecha_full,
-                categoria,
-                proveedor or None,
-                numero_factura or None,
-                cantidad,
-                unidad,
-                precio_unitario,
-                subtotal,
-                grava_iva,
-                iva,
-                total,
-            ),
-        )
-        conn.commit()
-        conn.close()
-        flash("Gasto registrado correctamente.", "success")
-        return redirect(url_for("dashboard_contable"))
+            flash(f"No se pudo guardar el gasto: {e}", "error")
+            return render_template("registrar_gasto.html")
 
     return render_template("registrar_gasto.html")
 
@@ -1513,7 +1579,7 @@ def reportes_excel():
     """, (fecha_desde, fecha_hasta)).fetchall()
 
     gastos_lista = [normalize_gasto(r) for r in conn.execute(
-        "SELECT fecha, descripcion, cantidad, unidad, precio_unitario, subtotal, iva, total, proveedor, numero_factura, categoria FROM gastos WHERE substr(fecha, 1, 10) BETWEEN ? AND ? ORDER BY fecha",
+        "SELECT * FROM gastos WHERE substr(fecha, 1, 10) BETWEEN ? AND ? ORDER BY fecha",
         (fecha_desde, fecha_hasta)
     ).fetchall()]
 
