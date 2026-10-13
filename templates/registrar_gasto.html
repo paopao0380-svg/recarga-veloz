@@ -269,9 +269,15 @@
     </div>
     <script>
         document.getElementById('fecha').valueAsDate = new Date();
+        function num(v) {
+            if (v == null) return 0;
+            v = String(v).trim().replace(/\s/g,'').replace(',', '.');
+            const n = parseFloat(v);
+            return isNaN(n) ? 0 : n;
+        }
         function calcular() {
-            const cant = parseFloat(document.getElementById('cantidad').value) || 0;
-            const pu = parseFloat(document.getElementById('precio_unitario').value) || 0;
+            const cant = num(document.getElementById('cantidad').value);
+            const pu = num(document.getElementById('precio_unitario').value);
             const grava = document.getElementById('grava_iva').value === '1';
             const sub = Math.round(cant * pu * 100) / 100;
             const iva = grava ? Math.round(sub * 0.15 * 100) / 100 : 0;
@@ -281,6 +287,13 @@
             document.getElementById('lbl-total').textContent = '$' + tot.toFixed(2);
         }
         calcular();
+        // Antes de enviar, normalizar comas a punto
+        document.getElementById('form-gasto').addEventListener('submit', function() {
+            ['cantidad','precio_unitario'].forEach(function(id) {
+                var el = document.getElementById(id);
+                if (el && el.value) el.value = String(el.value).replace(',', '.');
+            });
+        });
     </script>
     <script src="/static/js/app.js"></script>
 </body>
