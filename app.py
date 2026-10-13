@@ -1354,12 +1354,61 @@ def registrar_gasto():
     if current_user.rol not in ["contador", "admin", "sistema"]:
         return redirect(url_for("index"))
 
+    def parse_num(val):
+        """Acepta 0.50 o 0,50 (teclado en español)."""
+        if val is None:
+            return 0.0
+        s = str(val).strip().replace(" ", "").replace(",", ".")
+        if not s:
+            return 0.0
+        try:
+            return float(s)
+        except ValueError:
+            return 0.0
+
+    def ensure_gasto_columns(conn):
+        num_type = "DOUBLE PRECISION" if USE_POSTGRES else "REAL"
+        for col, typ in [
+            ("proveedor", "TEXT"),
+            ("numero_factura", "TEXT"),
+            ("cantidad", num_type),
+            ("unidad", "TEXT"),
+            ("precio_unitario", num_type),
+            ("subtotal", num_type),
+            ("grava_iva", "INTEGER"),
+            ("iva_monto", num_type),
+            ("total", num_type),
+        ]:
+            try:
+                conn.execute(f"ALTER TABLE gastos ADD COLUMN {col} {typ}")
+                conn.commit()
+            except Exception:
+                try:
+                    conn._conn.rollback()
+                except Exception:
+                    try:
+                        conn.execute("ROLLBACK")
+                    except Exception:
+                        pass
+
+    def pg_rollback(conn):
+        try:
+            if USE_POSTGRES:
+                conn._conn.rollback()
+            else:
+                conn.execute("ROLLBACK")
+        except Exception:
+            try:
+                conn.commit()
+            except Exception:
+                pass
+
     if request.method == "POST":
         conn = None
         try:
             descripcion = (request.form.get("descripcion") or "").strip()
-            proveedor = (request.form.get("proveedor") or "").strip()
-            numero_factura = (request.form.get("numero_factura") or "").strip()
+            proveedor = (request.form.get("proveedor") or "").strip() or None
+            numero_factura = (request.form.get("numero_factura") or "").strip() or None
             categoria = (request.form.get("categoria") or "Insumos").strip()
             unidad = (request.form.get("unidad") or "unidad").strip()
             fecha = (request.form.get("fecha") or "").strip()
@@ -1367,17 +1416,11 @@ def registrar_gasto():
                 fecha = datetime.now().strftime("%Y-%m-%d")
             fecha_full = fecha + " " + datetime.now().strftime("%H:%M")
 
-            try:
-                cantidad = float(request.form.get("cantidad") or 0)
-            except (TypeError, ValueError):
-                cantidad = 0.0
-            try:
-                precio_unitario = float(request.form.get("precio_unitario") or 0)
-            except (TypeError, ValueError):
-                precio_unitario = 0.0
-
+            cantidad = parse_num(request.form.get("cantidad"))
+            precio_unitario = parse_num(request.form.get("precio_unitario"))
             grava_raw = (request.form.get("grava_iva") or "0").strip().lower()
             grava_iva = 1 if grava_raw in ("1", "si", "sí", "on", "15", "true") else 0
+
             subtotal = round(cantidad * precio_unitario, 2)
             iva_val = round(subtotal * 0.15, 2) if grava_iva else 0.0
             total = round(subtotal + iva_val, 2)
@@ -1388,108 +1431,96 @@ def registrar_gasto():
             if cantidad <= 0:
                 flash("La cantidad debe ser mayor a 0.", "error")
                 return render_template("registrar_gasto.html")
+            if precio_unitario < 0:
+                flash("El precio unitario no es válido.", "error")
+                return render_template("registrar_gasto.html")
 
             conn = get_db()
-            num_type = "DOUBLE PRECISION" if USE_POSTGRES else "REAL"
-            for col, typ in [
-                ("proveedor", "TEXT"),
-                ("numero_factura", "TEXT"),
-                ("cantidad", num_type),
-                ("unidad", "TEXT"),
-                ("precio_unitario", num_type),
-                ("subtotal", num_type),
-                ("grava_iva", "INTEGER"),
-                ("iva_monto", num_type),  # evitar nombre problemático "iva"
-                ("total", num_type),
-            ]:
-                try:
-                    conn.execute(f"ALTER TABLE gastos ADD COLUMN {col} {typ}")
-                    conn.commit()
-                except Exception:
-                    pass
+            ensure_gasto_columns(conn)
 
-            # Insertar (usar iva_monto; si falla, intentar sin columnas extra)
+            # 1) Insertar siempre lo básico (columnas originales) — nunca debe fallar
+            conn.execute(
+                """INSERT INTO gastos (descripcion, monto, fecha, categoria)
+                   VALUES (?, ?, ?, ?)""",
+                (descripcion, float(total), fecha_full, categoria),
+            )
+            conn.commit()
+
+            # 2) Obtener id del registro recién creado
+            gid = None
             try:
-                conn.execute(
-                    """INSERT INTO gastos
-                       (descripcion, monto, fecha, categoria, proveedor, numero_factura,
-                        cantidad, unidad, precio_unitario, subtotal, grava_iva, iva_monto, total)
-                       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-                    (
-                        descripcion,
-                        float(total),
-                        fecha_full,
-                        categoria,
-                        proveedor or None,
-                        numero_factura or None,
-                        float(cantidad),
-                        unidad,
-                        float(precio_unitario),
-                        float(subtotal),
-                        int(grava_iva),
-                        float(iva_val),
-                        float(total),
-                    ),
-                )
-                conn.commit()
-            except Exception as e1:
-                print("INSERT completo falló, reintento básico:", e1)
+                row = conn.execute(
+                    "SELECT id FROM gastos WHERE descripcion = ? AND fecha = ? ORDER BY id DESC LIMIT 1",
+                    (descripcion, fecha_full),
+                ).fetchone()
+                if row is not None:
+                    gid = row["id"] if hasattr(row, "keys") else row[0]
+            except Exception as e:
+                print("AVISO id gasto:", e)
+                pg_rollback(conn)
+
+            # 3) Completar detalle (proveedor, IVA, cantidades…) en un UPDATE aparte
+            if gid is not None:
                 try:
                     conn.execute(
-                        """INSERT INTO gastos (descripcion, monto, fecha, categoria, proveedor, numero_factura)
-                           VALUES (?, ?, ?, ?, ?, ?)""",
+                        """UPDATE gastos SET
+                            proveedor = ?,
+                            numero_factura = ?,
+                            cantidad = ?,
+                            unidad = ?,
+                            precio_unitario = ?,
+                            subtotal = ?,
+                            grava_iva = ?,
+                            iva_monto = ?,
+                            total = ?,
+                            monto = ?
+                        WHERE id = ?""",
                         (
-                            descripcion,
+                            proveedor,
+                            numero_factura,
+                            float(cantidad),
+                            unidad,
+                            float(precio_unitario),
+                            float(subtotal),
+                            int(grava_iva),
+                            float(iva_val),
                             float(total),
-                            fecha_full,
-                            categoria,
-                            proveedor or None,
-                            numero_factura or None,
+                            float(total),
+                            gid,
                         ),
                     )
                     conn.commit()
-                    # intentar completar columnas
+                except Exception as e:
+                    print("AVISO update detalle gasto:", e)
+                    pg_rollback(conn)
+                    # Reintentar update mínimo
                     try:
-                        row = conn.execute(
-                            "SELECT id FROM gastos WHERE descripcion = ? AND fecha = ? ORDER BY id DESC",
-                            (descripcion, fecha_full),
-                        ).fetchone()
-                        if row:
-                            gid = row["id"] if hasattr(row, "keys") else row[0]
-                            conn.execute(
-                                """UPDATE gastos SET cantidad=?, unidad=?, precio_unitario=?, subtotal=?,
-                                   grava_iva=?, iva_monto=?, total=? WHERE id=?""",
-                                (
-                                    float(cantidad), unidad, float(precio_unitario),
-                                    float(subtotal), int(grava_iva), float(iva_val),
-                                    float(total), gid,
-                                ),
-                            )
-                            conn.commit()
+                        conn.execute(
+                            "UPDATE gastos SET proveedor = ?, numero_factura = ?, monto = ? WHERE id = ?",
+                            (proveedor, numero_factura, float(total), gid),
+                        )
+                        conn.commit()
                     except Exception as e2:
-                        print("UPDATE extra falló:", e2)
-                except Exception as e3:
-                    raise e3
+                        print("AVISO update mínimo:", e2)
+                        pg_rollback(conn)
 
-            # Verificar que quedó guardado
-            check = conn.execute(
-                "SELECT id, descripcion, monto, total, iva_monto, grava_iva FROM gastos ORDER BY id DESC LIMIT 1"
-            ).fetchone()
             conn.close()
             conn = None
 
-            if check:
-                desc = check["descripcion"] if hasattr(check, "keys") else check[1]
-                flash(
-                    f"Gasto guardado: {desc} · Total ${total:.2f}"
-                    + (f" (IVA ${iva_val:.2f})" if grava_iva else " (sin IVA)"),
-                    "success",
-                )
+            msg = f"Gasto guardado: {descripcion} · Total ${total:.2f}"
+            if grava_iva:
+                msg += f" (Subtotal ${subtotal:.2f} + IVA ${iva_val:.2f})"
             else:
-                flash("Gasto registrado.", "success")
+                msg += " (sin IVA)"
+            flash(msg, "success")
             return redirect(url_for("dashboard_contable"))
+
         except Exception as e:
             if conn is not None:
+                try:
+                    pg_rollback(conn)
+                except Exception:
+                    pass
                 try:
                     conn.close()
                 except Exception:
