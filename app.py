@@ -8,6 +8,8 @@ import os
 import uuid
 import csv
 import io
+import base64
+from PIL import Image
 from openpyxl import Workbook
 from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
 from openpyxl.chart import BarChart, Reference, PieChart
@@ -25,6 +27,38 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 def allowed_file(filename):
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
+
+def guardar_imagen_producto(archivo):
+    """Guarda la imagen de forma permanente en la base de datos (base64).
+    Así no se pierde en Render al reiniciar el servicio, y se ve en PC y celular.
+    """
+    if not archivo or not archivo.filename or not allowed_file(archivo.filename):
+        return None
+    try:
+        data = archivo.read()
+        if not data:
+            return None
+        # Redimensionar para no saturar la BD (máx ~800px)
+        img = Image.open(io.BytesIO(data))
+        img = img.convert("RGB")
+        img.thumbnail((800, 800), Image.Resampling.LANCZOS)
+        buf = io.BytesIO()
+        img.save(buf, format="JPEG", quality=82, optimize=True)
+        b64 = base64.b64encode(buf.getvalue()).decode("ascii")
+        return f"data:image/jpeg;base64,{b64}"
+    except Exception as e:
+        print("Error al procesar imagen:", e)
+        # Fallback: guardar archivo local (puede perderse en Render)
+        try:
+            archivo.stream.seek(0)
+            ext = archivo.filename.rsplit(".", 1)[1].lower()
+            nombre_archivo = f"{uuid.uuid4().hex}.{ext}"
+            ruta = os.path.join(app.config["UPLOAD_FOLDER"], nombre_archivo)
+            archivo.save(ruta)
+            return f"/static/img/productos/{nombre_archivo}"
+        except Exception as e2:
+            print("Fallback imagen falló:", e2)
+            return None
 
 login_manager = LoginManager()
 login_manager.init_app(app)
@@ -985,16 +1019,12 @@ def admin_nuevo_producto():
         stock = int(request.form.get("stock", 0))
         stock_minimo = int(request.form.get("stock_minimo", 5))
         
-        # Manejo de imagen
-        imagen = "https://via.placeholder.com/400"
+        # Manejo de imagen (se guarda en la BD para que no se pierda en Render)
+        imagen = "/static/img/placeholder.svg"
         if "imagen_archivo" in request.files:
-            archivo = request.files["imagen_archivo"]
-            if archivo and archivo.filename and allowed_file(archivo.filename):
-                ext = archivo.filename.rsplit(".", 1)[1].lower()
-                nombre_archivo = f"{uuid.uuid4().hex}.{ext}"
-                ruta = os.path.join(app.config["UPLOAD_FOLDER"], nombre_archivo)
-                archivo.save(ruta)
-                imagen = f"/static/img/productos/{nombre_archivo}"
+            guardada = guardar_imagen_producto(request.files["imagen_archivo"])
+            if guardada:
+                imagen = guardada
         elif request.form.get("imagen"):
             imagen = request.form.get("imagen")
         
@@ -1025,16 +1055,12 @@ def admin_editar_producto(id):
         stock_minimo = int(request.form.get("stock_minimo", 5))
         activo = 1 if request.form.get("activo") else 0
         
-        # Mantener imagen actual si no se sube una nueva
+        # Mantener imagen actual si no se sube una nueva (BD = permanente)
         imagen = producto["imagen"]
         if "imagen_archivo" in request.files:
-            archivo = request.files["imagen_archivo"]
-            if archivo and archivo.filename and allowed_file(archivo.filename):
-                ext = archivo.filename.rsplit(".", 1)[1].lower()
-                nombre_archivo = f"{uuid.uuid4().hex}.{ext}"
-                ruta = os.path.join(app.config["UPLOAD_FOLDER"], nombre_archivo)
-                archivo.save(ruta)
-                imagen = f"/static/img/productos/{nombre_archivo}"
+            guardada = guardar_imagen_producto(request.files["imagen_archivo"])
+            if guardada:
+                imagen = guardada
         elif request.form.get("imagen"):
             imagen = request.form.get("imagen")
         
